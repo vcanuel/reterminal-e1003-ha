@@ -1,11 +1,19 @@
 # reterminal-e1003-ha
 
+[![Build](https://github.com/vcanuel/reterminal-e1003-ha/actions/workflows/build.yml/badge.svg)](https://github.com/vcanuel/reterminal-e1003-ha/actions/workflows/build.yml)
+
 Tableau de bord Home Assistant pour le **Seeed reTerminal E1003** (ePaper 10,3", 1872×1404, 16 niveaux de gris,
 tactile GT911), en **ESPHome pur** : rien à configurer côté Home Assistant à part autoriser les actions.
 
 > État : config perso fonctionnelle, découpée en socle matériel + widgets réutilisables (voir `ROADMAP.md`).
 
 ![Tableau de bord (example.yaml, rendu par le simulateur)](docs/example.png)
+
+> **English** — Home Assistant dashboard for the Seeed reTerminal E1003 10.3" ePaper, in plain ESPHome. A generic
+> hardware package (`hardware.yaml`) plus reusable widgets (`widgets/`: weather, calendar, rooms, power, lock with a
+> touch sub-page, car, presence), each configured with your HA entities via package `vars`. Weather and calendar use
+> HA actions with `response_template`, so nothing has to be created in Home Assistant. Start from `example.yaml`;
+> the UI text is in French for now. See [CONTRIBUTING.md](CONTRIBUTING.md) to add a widget.
 
 ## Ce que ça fait
 
@@ -22,7 +30,7 @@ tactile GT911), en **ESPHome pur** : rien à configurer côté Home Assistant à
 
 ```
 hardware.yaml        socle matériel (écran, tactile, buzzer, LED, batterie, chargeur, veille, Wi-Fi/API/OTA)
-fonts.yaml           polices communes (Inter + icônes Material Design)
+fonts.yaml           polices communes (Inter + icônes Material Design, téléchargées au build)
 ui.h                 helpers de dessin, zones tactiles, sous-pages
 widgets/<nom>.yaml   capteurs HA du widget, entités passées en vars
 widgets/<nom>.h      dessin du widget dans un rectangle (+ zones tactiles / sous-page)
@@ -95,3 +103,12 @@ for f in example example-lock; do sips -s format png docs/$f.bmp --out docs/$f.p
 - Brancher l'USB ne réveille pas l'écran (l'interruption du chargeur n'arrive sur aucun GPIO) : bouton vert ou réveil
   suivant (≤ 30 min). Pour un OTA sur batterie : brancher l'USB puis appuyer sur le bouton vert.
 - Le tactile ne fonctionne que réveillé, donc en pratique sur secteur.
+
+## Licence et crédits
+
+Code sous licence [MIT](LICENSE). Contributions : voir [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Polices téléchargées à la compilation, non incluses dans le repo :
+[Inter](https://rsms.me/inter/) (SIL Open Font License 1.1, via Google Fonts) et
+[Material Design Icons](https://pictogrammers.com/library/mdi/) v7.4.47 (Apache 2.0, Pictogrammers).
+Projet indépendant, non affilié à Seeed Studio, ESPHome ni Home Assistant.

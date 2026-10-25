@@ -60,7 +60,7 @@ script:
 
 font:
   - { file: "gfonts://Inter@700", id: "${id}_big", size: 110, bpp: 2, glyphs: "-.BDOVaegiloqrtuvé" }
-  - file: ../fonts/materialdesignicons-webfont.ttf
+  - file: { type: web, url: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf" }
     id: ${id}_icon
     size: 280
     bpp: 2

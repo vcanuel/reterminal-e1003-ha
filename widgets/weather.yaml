@@ -66,7 +66,7 @@ script:
 
 font:
   - { file: "gfonts://Inter@700", id: "${id}_temp_xl", size: 230, bpp: 2, glyphs: "0123456789-.°" }
-  - file: ../fonts/materialdesignicons-webfont.ttf
+  - file: { type: web, url: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf" }
     id: ${id}_icon_xl
     size: 300
     bpp: 2
@@ -86,7 +86,7 @@ font:
       - "\U000F059D"  # weather-windy
       - "\U000F059E"  # weather-windy-variant
       - "\U000F05D6"  # alert-circle-outline
-  - file: ../fonts/materialdesignicons-webfont.ttf
+  - file: { type: web, url: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf" }
     id: ${id}_icon_m
     size: 100
     bpp: 2

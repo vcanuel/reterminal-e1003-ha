@@ -22,12 +22,14 @@ Reste :
 
 ## 2. Nettoyage avant publication
 
-- [x] Remplacer les `entity_id` perso par des `vars` (fait via les widgets ; données perso isolées dans `vincent.yaml`).
+- [x] Remplacer les `entity_id` perso par des `vars` (fait via les widgets ; données perso isolées dans `private/`).
 - [x] Configs perso dans `private/` (ignoré par git).
 - [x] Retirer adresses mail des calendriers, prénoms, noms de pièces (ne restent que dans `private/`).
-- [ ] Vérifier qu'aucun secret n'est versionné (`secrets.yaml` ignoré, `secrets.example.yaml` fourni).
-- [ ] Police MDI : la télécharger au build (`file: {type: web, url: ...}`) plutôt que versionner le .ttf (1,2 Mo).
-- [ ] Licence (MIT), README FR + EN.
+- [x] Vérifier qu'aucun secret n'est versionné (`secrets.yaml` ignoré, `secrets.example.yaml` fourni).
+- [x] Police MDI téléchargée au build (v7.4.47) plutôt que versionnée.
+- [x] Licence MIT, CONTRIBUTING, résumé anglais dans le README.
+- [ ] Textes de l'écran traduisibles (aujourd'hui en français dans les .h).
+- [ ] Passer le repo GitHub en public.
 - [x] Captures du README générées par `simulator.yaml` (rendu exact, données de démo) plutôt qu'une photo.
 
 ## 3. Fonctionnalités à venir

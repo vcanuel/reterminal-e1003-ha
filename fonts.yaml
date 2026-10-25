@@ -6,7 +6,7 @@ font:
   - { file: "gfonts://Inter@600", id: f_txt_b, size: 40, bpp: 2, glyphsets: [GF_Latin_Core] }
   - { file: "gfonts://Inter@400", id: f_txt, size: 40, bpp: 2, glyphsets: [GF_Latin_Core] }
   - { file: "gfonts://Inter@400", id: f_small, size: 32, bpp: 2, glyphsets: [GF_Latin_Core] }
-  - file: fonts/materialdesignicons-webfont.ttf
+  - file: { type: web, url: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf" }
     id: i_s
     size: 56
     bpp: 2
