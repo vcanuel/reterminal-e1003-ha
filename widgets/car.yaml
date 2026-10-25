@@ -1,17 +1,17 @@
-# Tuile voiture électrique : niveau de batterie (%), autonomie (km), puissance de charge (> 0 = en charge), branchée.
+# Electric car tile: battery level (%), range (km), charger power (> 0 = charging), plugged in.
 #   packages:
-#     voiture: !include
+#     car: !include
 #       file: widgets/car.yaml
 #       vars:
-#         id: voiture
-#         name: Voiture
+#         id: car
+#         name: Car
 #         battery: sensor.car_battery_level
 #         range: sensor.car_range
 #         charger_power: sensor.car_charger_power
 #         plugged: binary_sensor.car_plugged_in
-# Dessin : id(voiture)(it, {x, y, 370, 220});
+# Draw: id(car)(it, {x, y, 370, 220});
 defaults:
-  name: Voiture
+  name: Car
 
 esphome:
   includes:

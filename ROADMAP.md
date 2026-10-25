@@ -1,41 +1,37 @@
 # Roadmap
 
-Objectif : passer d'une config perso à un repo public réutilisable (`vcanuel/reterminal-e1003-ha`),
-**sans** viser un firmware binaire unique (un binaire ne connaît pas les entités HA de chacun, et la config depuis HA
-est déjà le terrain d'ESPHomeDesigner).
+Goal: a reusable public repo (`vcanuel/reterminal-e1003-ha`), **not** a single binary firmware (a binary does not
+know everyone's HA entities, and configuring from HA is already ESPHomeDesigner's territory).
 
-## 1. Personnalisation : widgets + config perso — piste A faite (2026-10-25)
+## 1. Customization: widgets + personal screen file — done (2026-10-25)
 
-Choix retenu : **A. Paquets + fonctions C++ par widget** (voir README, « Organisation ») :
-`hardware.yaml` générique, `ui.h` (helpers, zones tactiles, sous-pages), `widgets/<nom>.yaml` + `widgets/<nom>.h`,
-`private/vincent.yaml` (écran perso, non versionné, identique à l'ancien `reterminal-e1003.yaml`) et `example.yaml` (générique).
-Un widget = ses capteurs + son dessin + ses zones tactiles / sous-page (ex. serrure).
+Chosen approach: **packages + C++ functions per widget** (see the README, "Layout of the repo"):
+generic `hardware.yaml`, `ui.h` (helpers, touch zones, sub-pages), `widgets/<name>.yaml` + `widgets/<name>.h`,
+`example.yaml` (generic), personal screen files in `private/` (not versioned).
+A widget = its sensors + its drawing + its touch zones / sub-page (e.g. lock).
 
-Écartées pour l'instant :
-- **B. Composant externe `dashboard`** (codegen Python, mise en page déclarée en YAML) : à reconsidérer si le repo
-  public intéresse du monde.
-- **C. Config à chaud depuis HA** : hors périmètre (voir ESPHomeDesigner, Love4yzp/esphome-reterminal-e1003-workspace).
+Set aside for now:
+- **External `dashboard` component** (Python codegen, layout declared in YAML): to reconsider if the public repo
+  draws interest.
+- **Live configuration from HA**: out of scope (see ESPHomeDesigner, Love4yzp/esphome-reterminal-e1003-workspace).
 
-Reste :
-- [ ] Widgets à fonts dédiées (météo, serrure) : polices dupliquées si plusieurs instances (taille flash).
-- [x] Fichiers d'écran hors racine (`private/`) : chemins des paquets relatifs à chaque paquet.
+Left:
+- [ ] Widgets with dedicated fonts (weather, lock): fonts duplicated with several instances (flash size).
 
-## 2. Nettoyage avant publication
+## 2. Clean-up before publishing
 
-- [x] Remplacer les `entity_id` perso par des `vars` (fait via les widgets ; données perso isolées dans `private/`).
-- [x] Configs perso dans `private/` (ignoré par git).
-- [x] Retirer adresses mail des calendriers, prénoms, noms de pièces (ne restent que dans `private/`).
-- [x] Vérifier qu'aucun secret n'est versionné (`secrets.yaml` ignoré, `secrets.example.yaml` fourni).
-- [x] Police MDI téléchargée au build (v7.4.47) plutôt que versionnée.
-- [x] Licence MIT, CONTRIBUTING, résumé anglais dans le README.
-- [ ] Textes de l'écran traduisibles (aujourd'hui en français dans les .h).
-- [ ] Passer le repo GitHub en public.
-- [x] Captures du README générées par `simulator.yaml` (rendu exact, données de démo) plutôt qu'une photo.
+- [x] Personal `entity_id`s replaced by `vars`; personal screen files in `private/` (ignored by git).
+- [x] No secret versioned (`secrets.yaml` ignored, `secrets.example.yaml` provided).
+- [x] MDI font downloaded at build time (v7.4.47) instead of versioned.
+- [x] MIT license, CONTRIBUTING, CI build (example + simulator).
+- [x] README, code and on-screen texts in English; French via `language: fr` (`ui_strings.h`).
+- [x] README screenshots rendered by `simulator.yaml` (exact rendering, demo data) instead of a photo.
+- [ ] Make the GitHub repo public.
 
-## 3. Fonctionnalités à venir
+## 3. Upcoming features
 
-- [ ] Sous-page chauffage par pièce (consigne +/− 0,5 °C).
-- [ ] Page « souvenirs » photo (source à définir : Synology Photos, Immich…), via `online_image`.
-- [ ] Nettoyage anti-rémanence (mode INIT) une fois par heure.
-- [ ] Agenda : filtrer les jours d'observance (« Heure d'hiver », etc.).
-- [ ] Contribuer en amont (wiki Seeed / ESPHome) la détection secteur via SY6974B si utile.
+- [ ] Heating sub-page per room (target +/− 0.5 °C).
+- [ ] Photo "memories" page (source to define: Synology Photos, Immich…), via `online_image`.
+- [ ] Anti-ghosting clean-up (INIT mode) once an hour.
+- [ ] Calendar: filter observance days ("Daylight saving time ends", etc.).
+- [ ] Upstream (Seeed wiki / ESPHome) the mains detection through the SY6974B, if useful.

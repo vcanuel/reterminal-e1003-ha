@@ -1,19 +1,20 @@
-// Briques d'affichage communes aux widgets : couleurs, texte, zones tactiles, sous-pages.
-// Les widgets (widgets/*.h) dessinent dans un rectangle et déclarent leurs zones tactiles pendant le dessin :
-// les zones correspondent donc toujours à ce qui est affiché.
+// Drawing building blocks shared by the widgets: colors, text, touch zones, sub-pages.
+// Widgets (widgets/*.h) draw inside a rectangle and declare their touch zones while drawing,
+// so the zones always match what is on screen.
 #pragma once
 #include <cmath>
 #include <cstring>
 #include <functional>
 #include <string>
 #include <vector>
+#include "ui_strings.h"
 
 namespace ui {
 
 using display::Display;
 using display::Rect;
 using display::TextAlign;
-using Draw = std::function<void(Display &, Rect)>;  // type des globales exposées par les widgets
+using Draw = std::function<void(Display &, Rect)>;  // type of the globals exposed by the widgets
 
 static const Color BLACK(0, 0, 0, 255), WHITE(255, 255, 255, 255);
 static const Color GRAY(100, 100, 100, 255), LIGHT(190, 190, 190, 255);
@@ -22,7 +23,7 @@ inline void txt(Display &it, int x, int y, font::Font *f, Color c, TextAlign a, 
   it.print(x, y, f, c, a, s.c_str(), WHITE);
 }
 
-// "12.3" ou "--" si la valeur n'est pas disponible.
+// "12.3", or "--" when the value is not available.
 inline std::string fmt(float v, int decimals = 1) {
   if (std::isnan(v)) return "--";
   char buf[16];
@@ -43,18 +44,13 @@ inline std::vector<std::string> split(const std::string &s, char sep) {
   return out;
 }
 
-static const char *const JOURS[] = {"Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"};
-static const char *const JOURS_COURTS[] = {"Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"};  // weekday() Python
-static const char *const MOIS[] = {"janvier", "février", "mars",      "avril",   "mai",      "juin",
-                                   "juillet", "août",    "septembre", "octobre", "novembre", "décembre"};
-
-// Titre de section : icône (police i_s) + libellé.
+// Section title: icon (i_s font) + label.
 inline void title(Display &it, int x, int y, const char *icon, const char *label) {
   txt(it, x, y, i_s, BLACK, TextAlign::TOP_LEFT, icon);
   txt(it, x + 70, y + 2, f_h2, BLACK, TextAlign::TOP_LEFT, label);
 }
 
-// Tuile : icône + libellé, grande valeur, sous-titre.
+// Tile: icon + label, big value, subtitle.
 inline void tile(Display &it, Rect r, const char *icon, const char *label, const std::string &value,
                  const std::string &sub) {
   txt(it, r.x, r.y, i_s, BLACK, TextAlign::TOP_LEFT, icon);
@@ -63,7 +59,7 @@ inline void tile(Display &it, Rect r, const char *icon, const char *label, const
   if (!sub.empty()) txt(it, r.x, r.y + 150, f_small, GRAY, TextAlign::TOP_LEFT, sub);
 }
 
-// ---------- Zones tactiles ----------
+// ---------- Touch zones ----------
 struct Zone {
   Rect r;
   std::function<void()> fn;
@@ -74,7 +70,7 @@ inline std::vector<Zone> &zones() {
 }
 inline void zone(Rect r, std::function<void()> fn) { zones().push_back({r, std::move(fn)}); }
 
-// Appelle la zone touchée ; false si le toucher est hors de toute zone.
+// Runs the touched zone; false when the touch is outside every zone.
 inline bool touch(int x, int y) {
   for (auto &z : zones())
     if (z.r.inside(x, y)) {
@@ -84,9 +80,9 @@ inline bool touch(int x, int y) {
   return false;
 }
 
-// ---------- Sous-pages (plein écran, retour auto au tableau de bord après 2 min) ----------
+// ---------- Sub-pages (full screen, back to the dashboard after 2 min without touch) ----------
 struct Page {
-  std::string key;  // id du widget propriétaire, vide = tableau de bord
+  std::string key;  // id of the owning widget, empty = dashboard
   std::function<void(Display &)> draw;
 };
 inline Page &page() {
@@ -109,23 +105,24 @@ inline void button(Display &it, Rect r, const char *label, bool primary, std::fu
   zone(r, std::move(fn));
 }
 
-// En-tête de sous-page : bouton Retour, titre, filet.
+// Sub-page header: Back button, title, rule.
 inline void page_header(Display &it, const char *label) {
-  button(it, {48, 30, 300, 100}, "Retour", false, ui::close);
+  button(it, {48, 30, 300, 100}, tr().back, false, ui::close);
   txt(it, 1824, 50, f_h1, BLACK, TextAlign::TOP_RIGHT, label);
   it.filled_rectangle(48, 160, 1776, 4, BLACK);
 }
 
-// À appeler en tête du lambda d'affichage. Dessine l'écran de configuration Wi-Fi ou la sous-page ouverte
-// et renvoie true dans ce cas (le lambda doit alors s'arrêter), sinon efface l'écran pour le tableau de bord.
+// Call first in the display lambda. Draws the Wi-Fi setup screen or the open sub-page and returns true
+// (the lambda must then stop), otherwise clears the screen for the dashboard.
 inline bool begin(Display &it) {
   zones().clear();
   it.fill(WHITE);
 #ifdef USE_WIFI
   if (!wifi_comp->is_connected()) {
-    txt(it, 936, 560, f_h1, BLACK, TextAlign::TOP_CENTER, "Configuration Wi-Fi");
-    txt(it, 936, 680, f_txt, BLACK, TextAlign::TOP_CENTER, "Rejoindre le réseau « " + ap_ssid->value() + " »");
-    txt(it, 936, 740, f_txt, GRAY, TextAlign::TOP_CENTER, "puis choisir le Wi-Fi de la maison dans le portail");
+    const Strings &t = tr();
+    txt(it, 936, 560, f_h1, BLACK, TextAlign::TOP_CENTER, t.wifi_title);
+    txt(it, 936, 680, f_txt, BLACK, TextAlign::TOP_CENTER, t.wifi_join_before + ap_ssid->value() + t.wifi_join_after);
+    txt(it, 936, 740, f_txt, GRAY, TextAlign::TOP_CENTER, t.wifi_portal);
     return true;
   }
 #endif

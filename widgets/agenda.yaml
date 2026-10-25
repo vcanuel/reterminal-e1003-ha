@@ -1,15 +1,15 @@
-# Agenda : prochains événements (action calendar.get_events) d'un ou plusieurs calendriers, triés par date.
+# Calendar: next events (calendar.get_events action) from one or more calendars, sorted by date.
 #   packages:
 #     agenda: !include
 #       file: widgets/agenda.yaml
-#       vars: { id: agenda, calendars: "calendar.famille, calendar.anniversaires" }
-# Dessin : id(agenda)(it, {x, y, w, 85 + 66 * max_events});
+#       vars: { id: agenda, calendars: "calendar.family, calendar.birthdays" }
+# Draw: id(agenda)(it, {x, y, w, 85 + 66 * max_events});
 defaults:
   id: agenda
-  title: Agenda
-  duration: "168:00:00"   # fenêtre de recherche (7 jours)
+  title: Calendar
+  duration: "168:00:00"   # look-ahead window (7 days)
   max_events: "7"
-  max_chars: "30"          # longueur max d'un titre d'événement
+  max_chars: "30"          # max length of an event title
 
 esphome:
   includes:
@@ -36,16 +36,14 @@ script:
             entity_id: ${calendars}
             duration: ${duration}
           capture_response: true
-          # Une ligne par événement : jour|heure|titre
+          # One line per event: days_from_today|weekday (0 = Monday)|day_of_month|time|title
           response_template: |-
             {%- set ns = namespace(ev=[]) -%}
             {%- for k, v in response.items() -%}{%- set ns.ev = ns.ev + v.events -%}{%- endfor -%}
-            {%- set jours = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] -%}
             {%- set today = now().date() -%}
             {%- for e in (ns.ev | sort(attribute='start'))[:${max_events}] -%}
             {%- set d = strptime(e.start[:10], '%Y-%m-%d').date() -%}
-            {%- if d <= today -%}Auj.{%- elif d == today + timedelta(days=1) -%}Demain{%- else -%}{{ jours[d.weekday()] }} {{ d.day }}{%- endif -%}
-            |{{ e.start[11:16] }}|{{ e.summary | replace('|', '/') | replace('\n', ' ') | truncate(${max_chars}, true, '...', 0) }}
+            {{ (d - today).days }}|{{ d.weekday() }}|{{ d.day }}|{{ e.start[11:16] }}|{{ e.summary | replace('|', '/') | replace('\n', ' ') | truncate(${max_chars}, true, '...', 0) }}
             {% endfor -%}
           on_success:
             - lambda: |-

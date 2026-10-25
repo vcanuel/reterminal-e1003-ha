@@ -1,10 +1,10 @@
-# Simulateur sur ordinateur (plateforme host) : remplace hardware.yaml pour dessiner example.yaml avec des données
-# de démo dans une image, sans écran ni Home Assistant. Sert à produire les captures du README :
+# Desktop simulator (host platform): replaces hardware.yaml to draw example.yaml with demo data into an image,
+# without the screen or Home Assistant. Used to produce the README screenshots:
 #
-#   .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml
+#   ESPHOME_SNAPSHOT_DIR=$PWD/docs .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml
 #
-# Écrit docs/example.bmp (tableau de bord) et docs/example-lock.bmp (sous-page serrure) puis s'arrête.
-# Les données de démo ci-dessous visent les ids de example.yaml.
+# Writes example.bmp (dashboard) and example-lock.bmp (lock sub-page), then exits.
+# The demo data below targets the ids of example.yaml.
 
 packages:
   fonts: !include fonts.yaml
@@ -12,6 +12,7 @@ packages:
 esphome:
   name: ${name}
   includes:
+    - ui_strings.h
     - ui.h
   on_boot:
     - priority: -100
@@ -20,30 +21,31 @@ esphome:
             id(on_mains) = true;
             id(battery_level).publish_state(100);
 
-            id(meteo_state).publish_state("partlycloudy");
-            id(meteo_temp).publish_state(10.5);
-            id(meteo_hum).publish_state(60);
-            id(meteo_wind).publish_state(21);
-            id(meteo_forecast) =
+            id(weather_state).publish_state("partlycloudy");
+            id(weather_temp).publish_state(10.5);
+            id(weather_hum).publish_state(60);
+            id(weather_wind).publish_state(21);
+            id(weather_forecast) =
                 "partlycloudy|11|6|0|6\n"
                 "cloudy|13|8|0.2|0\n"
                 "rainy|12|9|3.5|1\n"
                 "sunny|14|7|0|2\n"
                 "sunny|15|6|0|3\n";
 
+            // days_from_today|weekday|day_of_month|time|title
             id(agenda_events) =
-                "Auj.||Vacances scolaires\n"
-                "Auj.|18:30|Piscine\n"
-                "Demain|08:15|Dentiste\n"
-                "Demain||Anniversaire de Bob\n"
-                "Mar 27|17:30|Zumba\n"
-                "Mer 28|09:00|Réunion parents-profs\n"
-                "Ven 30|20:00|Dîner chez Alice\n";
+                "0|6|25||School holidays\n"
+                "0|6|25|18:30|Swimming pool\n"
+                "1|0|26|08:15|Dentist\n"
+                "1|0|26||Bob's birthday\n"
+                "2|1|27|17:30|Zumba\n"
+                "3|2|28|09:00|Parent-teacher meeting\n"
+                "5|4|30|20:00|Dinner at Alice's\n";
 
             const struct { sensor::Sensor *cur, *target, *hum; text_sensor::TextSensor *action; float c, t, h; const char *a; } rooms[] = {
-              {id(salon_cur), id(salon_target), id(salon_hum), id(salon_action), 20.1, 19.5, 52, "heating"},
-              {id(chambre_cur), id(chambre_target), id(chambre_hum), id(chambre_action), 18.4, 17.0, 55, "idle"},
-              {id(bureau_cur), id(bureau_target), id(bureau_hum), id(bureau_action), 19.8, 19.0, 48, "idle"},
+              {id(living_room_cur), id(living_room_target), id(living_room_hum), id(living_room_action), 20.1, 19.5, 52, "heating"},
+              {id(bedroom_cur), id(bedroom_target), id(bedroom_hum), id(bedroom_action), 18.4, 17.0, 55, "idle"},
+              {id(office_cur), id(office_target), id(office_hum), id(office_action), 19.8, 19.0, 48, "idle"},
             };
             for (auto &r : rooms) {
               r.cur->publish_state(r.c);
@@ -52,19 +54,19 @@ esphome:
               r.action->publish_state(r.a);
             }
 
-            id(elec_power).publish_state(389);
-            id(porte_state).publish_state("locked");
-            id(voiture_battery).publish_state(69);
-            id(voiture_range).publish_state(263);
-            id(voiture_charger_power).publish_state(0);
-            id(voiture_plugged).publish_state(true);
+            id(power_meter_power).publish_state(389);
+            id(front_door_state).publish_state("locked");
+            id(car_battery).publish_state(69);
+            id(car_range).publish_state(263);
+            id(car_charger_power).publish_state(0);
+            id(car_plugged).publish_state(true);
             id(alice_state).publish_state("home");
-            id(bob_state).publish_state("Travail");
+            id(bob_state).publish_state("Work");
         - component.update: epaper_display
         - snapshot.take:
             id: epaper_display
             filename: example.bmp
-        # Toucher la tuile serrure ouvre sa sous-page.
+        # Touching the lock tile opens its sub-page.
         - lambda: ui::touch(1500, 1000);
         - component.update: epaper_display
         - snapshot.take:
@@ -76,7 +78,7 @@ host:
 
 logger:
 
-# Nécessaire aux capteurs homeassistant des widgets (aucun client ne se connecte).
+# Required by the widgets' homeassistant sensors (no client connects).
 api:
 
 time:
@@ -84,6 +86,10 @@ time:
     id: ha_time
 
 globals:
+  - id: ui_language
+    type: std::string
+    restore_value: no
+    initial_value: '"${language}"'
   - id: on_mains
     type: bool
     restore_value: no
@@ -96,7 +102,7 @@ sensor:
 script:
   - id: fetch_data
     then:
-      - logger.log: "Simulateur : pas de données HA"
+      - logger.log: "Simulator: no HA data"
 
 display:
   - platform: snapshot

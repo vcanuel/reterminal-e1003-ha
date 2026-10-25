@@ -1,4 +1,4 @@
-// Pièces (climate.*) : une ligne par pièce avec température, consigne, humidité et chauffe en cours.
+// Rooms (climate.*): one row per room with temperature, target, humidity and heating indicator.
 #pragma once
 #include "ui.h"
 
@@ -10,7 +10,7 @@ struct Room {
   text_sensor::TextSensor *action;
 };
 
-// Une ligne de 86 px de haut.
+// One row, 86 px high.
 inline void room_row(Display &it, Rect r, const Room &room) {
   txt(it, r.x, r.y + 14, f_txt, BLACK, TextAlign::TOP_LEFT, room.name);
   if (room.action->state == "heating")
@@ -20,8 +20,8 @@ inline void room_row(Display &it, Rect r, const Room &room) {
   txt(it, r.x2(), r.y + 38, f_small, GRAY, TextAlign::TOP_RIGHT, fmt(room.hum->state, 0) + " %");
 }
 
-// Titre + liste des pièces (chacune = la globale exposée par widgets/room.yaml).
-// Zone conseillée : largeur ~760, hauteur 80 + 86 x nombre de pièces.
+// Title + list of rooms (each one is the global exposed by widgets/room.yaml).
+// Suggested area: ~760 wide, 80 + 86 x number of rooms high.
 inline void rooms(Display &it, Rect r, const char *label, std::initializer_list<Draw> list) {
   title(it, r.x, r.y, "\U000F0F54", label);
   int i = 0;

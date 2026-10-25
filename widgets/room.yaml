@@ -1,8 +1,8 @@
-# Une pièce (entité climate.*) : température mesurée, consigne, humidité, chauffe en cours.
-# À instancier une fois par pièce, puis à lister dans ui::rooms :
+# One room (climate.* entity): measured temperature, target, humidity, heating indicator.
+# Include once per room, then list the rooms in ui::rooms:
 #   packages:
-#     salon: !include { file: widgets/room.yaml, vars: { id: salon, entity: climate.salon, name: Salon } }
-# Dessin : ui::rooms(it, {x, y, w, h}, "Pièces", {id(salon), id(cuisine)});
+#     living_room: !include { file: widgets/room.yaml, vars: { id: living_room, entity: climate.living_room, name: Living room } }
+# Draw: ui::rooms(it, {x, y, w, h}, "Rooms", {id(living_room), id(kitchen)});
 esphome:
   includes:
     - rooms.h

@@ -1,0 +1,128 @@
+// On-screen texts, one table per language. The language is chosen with the `language` substitution
+// (see hardware.yaml). To add a language: copy EN, translate it, and add it to ui::tr().
+#pragma once
+
+namespace ui {
+
+struct Strings {
+  bool day_before_month;      // "Sunday, October 25" (false) or "Dimanche 25 octobre" (true)
+  const char *days[7];        // full names, Sunday first (ESPHome day_of_week 1 = Sunday)
+  const char *days_short[7];  // Monday first (Python weekday() 0 = Monday)
+  const char *months[12];
+  const char *today, *tomorrow;
+  // Header
+  const char *updated, *mains;
+  // Wi-Fi setup screen
+  const char *wifi_title, *wifi_join_before, *wifi_join_after, *wifi_portal;
+  // Weather: condition labels in the order of WEATHER_CONDS (widgets/weather.h)
+  const char *conditions[14];
+  const char *humidity, *wind;
+  // Calendar
+  const char *no_events;
+  // Presence
+  const char *home, *away;
+  // Car
+  const char *charging, *plugged;
+  // Lock: states, tile, sub-page
+  const char *locked, *unlocked, *open, *opening, *locking, *unlocking, *jammed, *tile_unlocked;
+  const char *back, *do_lock, *do_unlock, *do_open, *open_hint;
+  const char *ask_lock, *ask_unlock, *ask_open, *open_warning;
+  const char *cancel, *confirm, *sent, *error;
+};
+
+static const Strings EN = {
+    false,
+    {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"},
+    {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"},
+    {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
+     "December"},
+    "Today",
+    "Tomorrow",
+    "Updated ",
+    "Mains",
+    "Wi-Fi setup",
+    "Join the \"",
+    "\" network",
+    "then pick your home Wi-Fi in the portal",
+    {"Clear night", "Cloudy", "Fog", "Hail", "Thunderstorm", "Thunder and rain", "Partly cloudy", "Pouring", "Rain",
+     "Snow", "Sleet", "Sunny", "Windy", "Windy"},
+    "Humidity ",
+    "Wind ",
+    "Nothing planned this week",
+    "home",
+    "away",
+    " · charging",
+    " · plugged in",
+    "Locked",
+    "Unlocked",
+    "Open",
+    "Opening...",
+    "Locking...",
+    "Unlocking...",
+    "Jammed",
+    "Unlocked",
+    "Back",
+    "Lock",
+    "Unlock",
+    "Open",
+    "pulls the latch",
+    "Lock the door?",
+    "Unlock the door?",
+    "Open the door?",
+    "The latch will be pulled: the door will open when pushed.",
+    "Cancel",
+    "Confirm",
+    "Command sent...",
+    "Error: ",
+};
+
+static const Strings FR = {
+    true,
+    {"Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"},
+    {"Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"},
+    {"janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre",
+     "décembre"},
+    "Auj.",
+    "Demain",
+    "Mis à jour ",
+    "Secteur",
+    "Configuration Wi-Fi",
+    "Rejoindre le réseau « ",
+    " »",
+    "puis choisir le Wi-Fi de la maison dans le portail",
+    {"Nuit claire", "Nuageux", "Brouillard", "Grêle", "Orage", "Orage et pluie", "Éclaircies", "Averses", "Pluie",
+     "Neige", "Neige fondue", "Ensoleillé", "Venteux", "Venteux"},
+    "Humidité ",
+    "Vent ",
+    "Rien de prévu cette semaine",
+    "maison",
+    "absent·e",
+    " · en charge",
+    " · branchée",
+    "Verrouillée",
+    "Déverrouillée",
+    "Ouverte",
+    "Ouverture...",
+    "Verrouillage...",
+    "Déverrouillage...",
+    "Bloquée",
+    "Ouverte",
+    "Retour",
+    "Verrouiller",
+    "Déverrouiller",
+    "Ouvrir",
+    "tire le pêne",
+    "Verrouiller la porte ?",
+    "Déverrouiller la porte ?",
+    "Ouvrir la porte ?",
+    "Le pêne sera tiré : la porte s'ouvrira en poussant.",
+    "Annuler",
+    "Confirmer",
+    "Commande envoyée...",
+    "Erreur : ",
+};
+
+// Texts for the configured language (English by default).
+inline const Strings &tr() { return ui_language->value() == "fr" ? FR : EN; }
+
+}  // namespace ui

@@ -1,7 +1,7 @@
-# Une personne (entité person.*), à lister dans ui::presence :
+# One person (person.* entity), to list in ui::presence:
 #   packages:
 #     alice: !include { file: widgets/person.yaml, vars: { id: alice, entity: person.alice, name: Alice } }
-# Dessin : ui::presence(it, {x, y, 370, 220}, "Présence", {id(alice), id(bob)});
+# Draw: ui::presence(it, {x, y, 370, 220}, "Presence", {id(alice), id(bob)});
 esphome:
   includes:
     - presence.h

@@ -1,33 +1,35 @@
-# Exemple d'écran : copier ce fichier (ex. mon-ecran.yaml), remplacer les entités HA, ajuster la mise en page.
+# Example screen: copy this file to private/my-screen.yaml (ignored by git), prefix the paths with ../,
+# replace the HA entities and adjust the layout.
 #
-# Compiler / flasher :  .venv/bin/esphome run mon-ecran.yaml
-# Pré-requis HA : intégration ESPHome > appareil > Options > "Autoriser l'appareil à effectuer des actions".
+# Compile / flash:  .venv/bin/esphome run private/my-screen.yaml
+# HA requirement: ESPHome integration > device > Configure > "Allow the device to perform Home Assistant actions".
 
 substitutions:
-  name: reterminal-e1003          # nom de l'appareil dans HA
+  name: reterminal-e1003          # device name in HA
   friendly_name: reTerminal E1003
-  # refresh_interval: 5min        # rafraîchissement sur secteur
-  # sleep_duration: 30min         # veille sur batterie
-  hardware: hardware.yaml         # simulator.yaml pour la capture d'écran du README (voir README)
+  language: en                    # on-screen texts: en, fr
+  # refresh_interval: 5min        # refresh period on mains
+  # sleep_duration: 30min         # deep sleep duration on battery
+  hardware: hardware.yaml         # simulator.yaml to render the README screenshots (see README)
 
 packages:
   hardware: !include ${hardware}
 
-  # Un paquet par widget (ou par pièce / personne), avec ses entités HA.
+  # One package per widget (or per room / person), with its HA entities.
   header: !include widgets/header.yaml
-  meteo: !include { file: widgets/weather.yaml, vars: { id: meteo, entity: weather.home } }
+  weather: !include { file: widgets/weather.yaml, vars: { id: weather, entity: weather.home } }
   agenda: !include
     file: widgets/agenda.yaml
     vars: { id: agenda, calendars: "calendar.family, calendar.birthdays" }
-  salon: !include { file: widgets/room.yaml, vars: { id: salon, entity: climate.living_room, name: Salon } }
-  chambre: !include { file: widgets/room.yaml, vars: { id: chambre, entity: climate.bedroom, name: Chambre } }
-  bureau: !include { file: widgets/room.yaml, vars: { id: bureau, entity: climate.office, name: Bureau } }
-  elec: !include { file: widgets/power.yaml, vars: { id: elec, entity: sensor.power_consumption } }
-  porte: !include { file: widgets/lock.yaml, vars: { id: porte, entity: lock.front_door, name: "Porte d'entrée" } }
-  voiture: !include
+  living_room: !include { file: widgets/room.yaml, vars: { id: living_room, entity: climate.living_room, name: Living room } }
+  bedroom: !include { file: widgets/room.yaml, vars: { id: bedroom, entity: climate.bedroom, name: Bedroom } }
+  office: !include { file: widgets/room.yaml, vars: { id: office, entity: climate.office, name: Office } }
+  power_meter: !include { file: widgets/power.yaml, vars: { id: power_meter, entity: sensor.power_consumption } }
+  front_door: !include { file: widgets/lock.yaml, vars: { id: front_door, entity: lock.front_door, name: Front door } }
+  car: !include
     file: widgets/car.yaml
     vars:
-      id: voiture
+      id: car
       battery: sensor.car_battery_level
       range: sensor.car_range
       charger_power: sensor.car_charger_power
@@ -35,26 +37,26 @@ packages:
   alice: !include { file: widgets/person.yaml, vars: { id: alice, entity: person.alice, name: Alice } }
   bob: !include { file: widgets/person.yaml, vars: { id: bob, entity: person.bob, name: Bob } }
 
-# Mise en page (écran 1872 x 1404) : chaque widget dessine dans le rectangle {x, y, largeur, hauteur} donné.
+# Layout (1872 x 1404 screen): each widget draws inside the given {x, y, width, height} rectangle.
 display:
   - id: !extend epaper_display
     lambda: |-
-      if (ui::begin(it)) return;  // écran Wi-Fi ou sous-page (serrure)
+      if (ui::begin(it)) return;  // Wi-Fi setup screen or sub-page (lock)
 
       ui::header(it, {48, 40, 1776, 100});
       it.filled_rectangle(48, 140, 1776, 4, ui::BLACK);
 
-      id(meteo)(it, {40, 160, 978, 620});
+      id(weather)(it, {40, 160, 978, 620});
       it.filled_rectangle(1018, 170, 3, 600, ui::LIGHT);
-      ui::rooms(it, {1060, 170, 764, 600}, "Pièces", {id(salon), id(chambre), id(bureau)});
+      ui::rooms(it, {1060, 170, 764, 600}, "Rooms", {id(living_room), id(bedroom), id(office)});
 
       it.filled_rectangle(48, 800, 1776, 4, ui::BLACK);
 
       id(agenda)(it, {48, 830, 952, 540});
       it.filled_rectangle(1018, 830, 3, 540, ui::LIGHT);
 
-      ui::title(it, 1060, 830, "\U000F02DC", "Maison");
-      id(elec)(it, {1060, 915, 370, 220});
-      id(porte)(it, {1454, 915, 370, 220});
-      id(voiture)(it, {1060, 1150, 370, 220});
-      ui::presence(it, {1454, 1150, 370, 220}, "Présence", {id(alice), id(bob)});
+      ui::title(it, 1060, 830, "\U000F02DC", "Home");
+      id(power_meter)(it, {1060, 915, 370, 220});
+      id(front_door)(it, {1454, 915, 370, 220});
+      id(car)(it, {1060, 1150, 370, 220});
+      ui::presence(it, {1454, 1150, 370, 220}, "Presence", {id(alice), id(bob)});

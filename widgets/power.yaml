@@ -1,10 +1,10 @@
-# Tuile électricité : puissance instantanée d'un capteur en W (compteur P1, pince...).
+# Power tile: instant power of a sensor in W (smart meter, clamp...).
 #   packages:
-#     elec: !include { file: widgets/power.yaml, vars: { id: elec, entity: sensor.p1_power } }
-# Dessin : id(elec)(it, {x, y, 370, 220});
+#     power_meter: !include { file: widgets/power.yaml, vars: { id: power_meter, entity: sensor.power } }
+# Draw: id(power_meter)(it, {x, y, 370, 220});
 defaults:
-  title: Électricité
-  subtitle: consommation actuelle
+  title: Electricity
+  subtitle: current consumption
 
 esphome:
   includes:

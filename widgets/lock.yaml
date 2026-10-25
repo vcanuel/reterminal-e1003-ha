@@ -1,10 +1,10 @@
-# Serrure (entité lock.*) : tuile d'état ; la toucher ouvre une sous-page verrouiller / déverrouiller / ouvrir
-# avec confirmation (actions lock.lock / lock.unlock / lock.open).
+# Lock (lock.* entity): status tile; touching it opens a lock / unlock / open sub-page
+# with confirmation (lock.lock / lock.unlock / lock.open actions).
 #   packages:
-#     porte: !include { file: widgets/lock.yaml, vars: { id: porte, entity: lock.front_door, name: "Porte d'entrée" } }
-# Dessin : id(porte)(it, {x, y, 370, 220});
+#     front_door: !include { file: widgets/lock.yaml, vars: { id: front_door, entity: lock.front_door, name: Front door } }
+# Draw: id(front_door)(it, {x, y, 370, 220});
 defaults:
-  name: Porte
+  name: Door
   subtitle: ""
 
 esphome:
@@ -55,11 +55,11 @@ script:
           data:
             entity_id: ${entity}
           on_error:
-            - lambda: 'id(${id}_msg) = "Erreur : " + error;'
+            - lambda: 'id(${id}_msg) = std::string(ui::tr().error) + error;'
             - component.update: epaper_display
 
 font:
-  - { file: "gfonts://Inter@700", id: "${id}_big", size: 110, bpp: 2, glyphs: "-.BDOVaegiloqrtuvé" }
+  - { file: "gfonts://Inter@700", id: "${id}_big", size: 110, bpp: 2, glyphs: "-.BDJLOUVacdegiklmnopqrtuvé" }
   - file: { type: web, url: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf" }
     id: ${id}_icon
     size: 280

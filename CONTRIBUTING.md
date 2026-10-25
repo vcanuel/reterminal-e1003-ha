@@ -1,39 +1,38 @@
-# Contribuer
+# Contributing
 
-Merci de votre intérêt ! Issues et pull requests sont bienvenues, en français ou en anglais
-(*issues and pull requests are welcome, in French or English*).
+Thanks for your interest! Issues and pull requests are welcome, in English or French.
 
-## Signaler un problème
+## Reporting a problem
 
-Indiquer la version d'ESPHome (`esphome version`), le fichier d'écran utilisé (sans `secrets.yaml` ni entités
-privées si vous préférez), les logs (`esphome logs ...`) et si possible une photo de l'écran.
+Include the ESPHome version (`esphome version`), the screen file you use (without `secrets.yaml` or private
+entities if you prefer), the logs (`esphome logs ...`) and, if possible, a photo of the screen.
 
-## Proposer un widget
+## Adding a widget
 
-Un widget = deux fichiers dans `widgets/` (voir le README, « Organisation ») :
+A widget = two files in `widgets/` (see the README, "Layout of the repo"):
 
-- `widgets/<nom>.yaml` : capteurs HA du widget, entités passées en `vars` (avec `defaults:` pour les options),
-  une globale `${id}` de type `std::function<void(display::Display &, display::Rect)>` qui dessine le widget,
-  et si besoin un `script: - id: !extend fetch_data` pour les actions HA appelées à chaque rafraîchissement.
-  Chemins relatifs au paquet (`<nom>.h`), pour fonctionner depuis n'importe quel dossier.
-- `widgets/<nom>.h` : fonctions dans le namespace `ui` (pas de namespace propre : il entrerait en collision avec
-  les ids ESPHome). Dessiner relativement au `Rect` reçu, déclarer les zones tactiles avec `ui::zone` et les
-  sous-pages avec `ui::open`.
+- `widgets/<name>.yaml`: the widget's HA sensors, entities passed as `vars` (with `defaults:` for options),
+  a global `${id}` of type `std::function<void(display::Display &, display::Rect)>` that draws the widget,
+  and if needed a `script: - id: !extend fetch_data` for the HA actions called on each refresh.
+  Paths relative to the package (`<name>.h`), so it works from any folder.
+- `widgets/<name>.h`: functions in the `ui` namespace (no namespace of its own: it would clash with ESPHome ids).
+  Draw relative to the given `Rect`, declare touch zones with `ui::zone` and sub-pages with `ui::open`.
+  On-screen texts go in `ui_strings.h` (every language), read with `ui::tr()`.
 
-Rester sobre : écran ePaper 16 niveaux de gris, police Inter et icônes Material Design de `fonts.yaml`.
+Keep it sober: 16-gray-level ePaper, Inter font and Material Design icons from `fonts.yaml`.
 
-## Avant d'ouvrir une pull request
+## Before opening a pull request
 
-1. `example.yaml` compile : `.venv/bin/esphome compile example.yaml` (ajouter le widget à l'exemple s'il est nouveau,
-   avec des entités fictives).
-2. Le simulateur tourne et les captures sont à jour (commande dans le README, « Captures d'écran ») ; ajouter des
-   données de démo pour le widget dans `simulator.yaml`.
-3. Si possible, testé sur un vrai reTerminal E1003 (le dire dans la PR, avec une photo).
-4. README mis à jour (tableau des widgets).
+1. `example.yaml` compiles: `.venv/bin/esphome compile example.yaml` (add a new widget to the example, with
+   made-up entities).
+2. The simulator runs and the screenshots are up to date (command in the README, "Screenshots"); add demo data
+   for the widget in `simulator.yaml`.
+3. If possible, tested on a real reTerminal E1003 (say so in the PR, with a photo).
+4. README updated (widget table).
 
-La CI (`.github/workflows/build.yml`) refait les étapes 1 et 2 sur chaque PR : firmware et captures disponibles
-en artefacts du run.
+The CI (`.github/workflows/build.yml`) runs steps 1 and 2 on every PR: firmware and screenshots are available as
+run artifacts.
 
-Pas de données personnelles dans les commits : les configs perso vont dans `private/` (ignoré par git).
+No personal data in commits: personal screen files go in `private/` (ignored by git).
 
-En contribuant, vous acceptez que votre contribution soit publiée sous licence MIT (voir `LICENSE`).
+By contributing, you agree that your contribution is released under the MIT license (see `LICENSE`).

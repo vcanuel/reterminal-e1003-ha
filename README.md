@@ -2,113 +2,106 @@
 
 [![Build](https://github.com/vcanuel/reterminal-e1003-ha/actions/workflows/build.yml/badge.svg)](https://github.com/vcanuel/reterminal-e1003-ha/actions/workflows/build.yml)
 
-Tableau de bord Home Assistant pour le **Seeed reTerminal E1003** (ePaper 10,3", 1872×1404, 16 niveaux de gris,
-tactile GT911), en **ESPHome pur** : rien à configurer côté Home Assistant à part autoriser les actions.
+Home Assistant dashboard for the **Seeed reTerminal E1003** (10.3" ePaper, 1872×1404, 16 gray levels, GT911 touch),
+in **plain ESPHome**: nothing to set up in Home Assistant besides allowing actions.
 
-> État : config perso fonctionnelle, découpée en socle matériel + widgets réutilisables (voir `ROADMAP.md`).
+![Dashboard (example.yaml, rendered by the simulator)](docs/example.png)
 
-![Tableau de bord (example.yaml, rendu par le simulateur)](docs/example.png)
+## Features
 
-> **English** — Home Assistant dashboard for the Seeed reTerminal E1003 10.3" ePaper, in plain ESPHome. A generic
-> hardware package (`hardware.yaml`) plus reusable widgets (`widgets/`: weather, calendar, rooms, power, lock with a
-> touch sub-page, car, presence), each configured with your HA entities via package `vars`. Weather and calendar use
-> HA actions with `response_template`, so nothing has to be created in Home Assistant. Start from `example.yaml`;
-> the UI text is in French for now. See [CONTRIBUTING.md](CONTRIBUTING.md) to add a widget.
+- Weather (current + 5 days) and calendar fetched with the HA actions `weather.get_forecasts` /
+  `calendar.get_events` and `response_template`: no template sensor to create in HA.
+- Rooms (climate.*), power, lock, electric car, presence through `homeassistant` sensors.
+- Touch: lock sub-page (lock / unlock / open, with confirmation), feedback beep, back to the dashboard after 2 min.
+  Touching anywhere else refreshes the screen.
+- Power: mains/battery detection through the **SY6974B** charger (I2C 0x6B, REG08 bit 2), with a voltage-jump
+  fallback. On mains: refresh every 5 min + touch. On battery: one refresh, then 30 min deep sleep
+  (wake-up with the green button).
+- On-screen texts in English or French (`language` substitution; see `ui_strings.h` to add a language).
 
-## Ce que ça fait
-
-- Météo (actuelle + 5 jours) et agenda récupérés via les actions HA `weather.get_forecasts` / `calendar.get_events`
-  avec `response_template` : pas de capteur modèle à créer dans HA.
-- Pièces (climate.*), électricité, serrure, voiture, présence via des capteurs `homeassistant`.
-- Tactile : sous-page serrure (verrouiller / déverrouiller / ouvrir, avec confirmation), bip de retour,
-  retour auto au tableau de bord après 2 min. Toucher ailleurs rafraîchit l'écran.
-- Énergie : détection secteur/batterie par le chargeur **SY6974B** (I2C 0x6B, REG08 bit 2), secours par saut de tension.
-  Sur secteur : rafraîchissement toutes les 5 min + tactile. Sur batterie : un rafraîchissement puis deep sleep 30 min
-  (réveil par le bouton vert).
-
-## Organisation
+## Layout of the repo
 
 ```
-hardware.yaml        socle matériel (écran, tactile, buzzer, LED, batterie, chargeur, veille, Wi-Fi/API/OTA)
-fonts.yaml           polices communes (Inter + icônes Material Design, téléchargées au build)
-ui.h                 helpers de dessin, zones tactiles, sous-pages
-widgets/<nom>.yaml   capteurs HA du widget, entités passées en vars
-widgets/<nom>.h      dessin du widget dans un rectangle (+ zones tactiles / sous-page)
-example.yaml         écran d'exemple, à copier dans private/ (ignoré par git) pour son écran perso
-simulator.yaml       remplace hardware.yaml sur ordinateur pour générer les captures (docs/)
+hardware.yaml        hardware package (display, touch, buzzer, LED, battery, charger, sleep, Wi-Fi/API/OTA)
+fonts.yaml           shared fonts (Inter + Material Design Icons, downloaded at build time)
+ui.h, ui_strings.h   drawing helpers, touch zones, sub-pages; on-screen texts per language
+widgets/<name>.yaml  the widget's HA sensors, entities passed as vars
+widgets/<name>.h     draws the widget inside a rectangle (+ touch zones / sub-page)
+example.yaml         example screen, to copy into private/ (ignored by git) for your own screen
+simulator.yaml       replaces hardware.yaml on a computer to render the screenshots (docs/)
 ```
 
-| Widget | Paquet (vars) | Dessin |
+| Widget | Package (vars) | Drawing |
 |---|---|---|
-| En-tête (date, MAJ, alimentation) | `widgets/header.yaml` | `ui::header(it, {x, y, w, h})` |
-| Météo actuelle + 5 jours | `widgets/weather.yaml` (`id`, `entity`) | `id(meteo)(it, {x, y, 980, 620})` |
-| Agenda | `widgets/agenda.yaml` (`id`, `calendars`, `title`, `duration`, `max_events`, `max_chars`) | `id(agenda)(it, {x, y, w, h})` |
-| Pièce climate.* | `widgets/room.yaml` (`id`, `entity`, `name`), une par pièce | `ui::rooms(it, r, "Pièces", {id(salon), ...})` |
-| Électricité | `widgets/power.yaml` (`id`, `entity`, `title`, `subtitle`) | `id(elec)(it, {x, y, 370, 220})` |
-| Serrure + sous-page | `widgets/lock.yaml` (`id`, `entity`, `name`, `subtitle`) | `id(porte)(it, {x, y, 370, 220})` |
-| Voiture électrique | `widgets/car.yaml` (`id`, `name`, `battery`, `range`, `charger_power`, `plugged`) | `id(voiture)(it, {x, y, 370, 220})` |
-| Présence person.* | `widgets/person.yaml` (`id`, `entity`, `name`), une par personne | `ui::presence(it, r, "Présence", {id(alice), ...})` |
+| Header (date, last update, power) | `widgets/header.yaml` | `ui::header(it, {x, y, w, h})` |
+| Weather, current + 5 days | `widgets/weather.yaml` (`id`, `entity`) | `id(weather)(it, {x, y, 980, 620})` |
+| Calendar | `widgets/agenda.yaml` (`id`, `calendars`, `title`, `duration`, `max_events`, `max_chars`) | `id(agenda)(it, {x, y, w, h})` |
+| Room (climate.*) | `widgets/room.yaml` (`id`, `entity`, `name`), one per room | `ui::rooms(it, r, "Rooms", {id(living_room), ...})` |
+| Power | `widgets/power.yaml` (`id`, `entity`, `title`, `subtitle`) | `id(power_meter)(it, {x, y, 370, 220})` |
+| Lock + sub-page | `widgets/lock.yaml` (`id`, `entity`, `name`, `subtitle`) | `id(front_door)(it, {x, y, 370, 220})` |
+| Electric car | `widgets/car.yaml` (`id`, `name`, `battery`, `range`, `charger_power`, `plugged`) | `id(car)(it, {x, y, 370, 220})` |
+| Presence (person.*) | `widgets/person.yaml` (`id`, `entity`, `name`), one per person | `ui::presence(it, r, "Presence", {id(alice), ...})` |
 
-Chaque paquet expose une globale `id(<id>)` qui dessine le widget dans le rectangle donné ; le fichier d'écran
-liste ses paquets et place les widgets dans un lambda court (voir `example.yaml`) :
+Each package exposes a global `id(<id>)` that draws the widget inside the given rectangle; the screen file lists
+its packages and places the widgets in a short lambda (see `example.yaml`):
 
 ```yaml
 packages:
   hardware: !include hardware.yaml
-  meteo: !include { file: widgets/weather.yaml, vars: { id: meteo, entity: weather.home } }
+  weather: !include { file: widgets/weather.yaml, vars: { id: weather, entity: weather.home } }
 display:
   - id: !extend epaper_display
     lambda: |-
-      if (ui::begin(it)) return;   // écran Wi-Fi ou sous-page
-      id(meteo)(it, {40, 160, 978, 620});
+      if (ui::begin(it)) return;   // Wi-Fi setup screen or sub-page
+      id(weather)(it, {40, 160, 978, 620});
 ```
 
-Écrire un widget : un `widgets/<nom>.h` avec une fonction `ui::<nom>(Display &it, Rect r, ...)` (helpers `ui::txt`,
-`ui::tile`, `ui::title`, `ui::zone` pour une zone tactile, `ui::open` pour une sous-page), et un `widgets/<nom>.yaml`
-qui déclare ses capteurs et, s'il appelle une action HA au rafraîchissement, l'ajoute au script commun :
-`script: [{ id: !extend fetch_data, then: [...] }]`. Icônes Material Design : la police `i_s` de `hardware.yaml`,
-à compléter avec `font: [{ id: !extend i_s, glyphs: [...] }]`.
+Writing a widget: a `widgets/<name>.h` with a function `ui::<name>(Display &it, Rect r, ...)` (helpers `ui::txt`,
+`ui::tile`, `ui::title`, `ui::zone` for a touch zone, `ui::open` for a sub-page, `ui::tr()` for translated texts),
+and a `widgets/<name>.yaml` declaring its sensors and, if it calls an HA action on each refresh, adding it to the
+shared script: `script: [{ id: !extend fetch_data, then: [...] }]`. Material Design icons: the `i_s` font of
+`fonts.yaml`, to extend with `font: [{ id: !extend i_s, glyphs: [...] }]`. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Utilisation
+## Usage
 
 ```bash
-uv venv .venv && uv pip install --python .venv esphome      # ESPHome >= 2026.7 (driver it8951)
+uv venv .venv && uv pip install --python .venv esphome      # ESPHome >= 2026.7 (it8951 driver)
 cp secrets.example.yaml secrets.yaml                          # api_key, ota_password, ap_password
-mkdir -p private && cp example.yaml private/mon-ecran.yaml      # private/ est ignoré par git
-# dans private/mon-ecran.yaml : préfixer les chemins par ../ (hardware.yaml, widgets/...) et y mettre ses entités HA
-.venv/bin/esphome run private/mon-ecran.yaml --device /dev/cu.wchusbserial*   # 1er flash en USB (CH340)
-.venv/bin/esphome run private/mon-ecran.yaml --device <ip>                    # ensuite en OTA
+mkdir -p private && cp example.yaml private/my-screen.yaml    # private/ is ignored by git
+# in private/my-screen.yaml: prefix the paths with ../ (hardware.yaml, widgets/...) and set your HA entities
+.venv/bin/esphome run private/my-screen.yaml --device /dev/cu.wchusbserial*   # first flash over USB (CH340)
+.venv/bin/esphome run private/my-screen.yaml --device <ip>                    # then over the air
 ```
 
-1. Au premier démarrage l'écran ouvre le point d'accès `reTerminal-E1003` : y choisir le Wi-Fi de la maison.
-2. HA découvre l'appareil (intégration ESPHome).
-3. **Options de l'appareil ESPHome > « Autoriser l'appareil à effectuer des actions Home Assistant »** (sinon météo et
-   agenda restent vides, et la serrure ne répond pas).
+1. On first boot the screen opens the `reTerminal-E1003` access point: pick your home Wi-Fi there.
+2. HA discovers the device (ESPHome integration).
+3. **ESPHome device options > "Allow the device to perform Home Assistant actions"** (otherwise weather and calendar
+   stay empty, and the lock does not respond).
 
-## Captures d'écran (simulateur)
+## Screenshots (simulator)
 
-`simulator.yaml` remplace `hardware.yaml` par la plateforme `host` d'ESPHome et un écran en mémoire : il dessine
-`example.yaml` avec des données de démo, enregistre le tableau de bord et la sous-page serrure, puis s'arrête.
-Pas besoin de l'écran ni de Home Assistant.
+`simulator.yaml` replaces `hardware.yaml` with ESPHome's `host` platform and an in-memory display: it draws
+`example.yaml` with demo data, saves the dashboard and the lock sub-page, then exits. No screen or Home Assistant
+needed.
 
 ```bash
 ESPHOME_SNAPSHOT_DIR=$PWD/docs .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml --no-logs
 for f in example example-lock; do sips -s format png docs/$f.bmp --out docs/$f.png && rm docs/$f.bmp; done   # macOS
 ```
 
-<img src="docs/example-lock.png" width="400" alt="Sous-page serrure">
+<img src="docs/example-lock.png" width="400" alt="Lock sub-page">
 
-## Limites connues
+## Known limitations
 
-- Brancher l'USB ne réveille pas l'écran (l'interruption du chargeur n'arrive sur aucun GPIO) : bouton vert ou réveil
-  suivant (≤ 30 min). Pour un OTA sur batterie : brancher l'USB puis appuyer sur le bouton vert.
-- Le tactile ne fonctionne que réveillé, donc en pratique sur secteur.
+- Plugging in USB does not wake the screen (the charger interrupt reaches no GPIO): green button or next wake-up
+  (≤ 30 min). For an OTA update on battery: plug in USB, then press the green button.
+- Touch only works while awake, so in practice on mains.
 
-## Licence et crédits
+## License and credits
 
-Code sous licence [MIT](LICENSE). Contributions : voir [CONTRIBUTING.md](CONTRIBUTING.md).
+Code under the [MIT](LICENSE) license. Contributions: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Polices téléchargées à la compilation, non incluses dans le repo :
-[Inter](https://rsms.me/inter/) (SIL Open Font License 1.1, via Google Fonts) et
+Fonts downloaded at build time, not included in the repo:
+[Inter](https://rsms.me/inter/) (SIL Open Font License 1.1, via Google Fonts) and
 [Material Design Icons](https://pictogrammers.com/library/mdi/) v7.4.47 (Apache 2.0, Pictogrammers).
-Projet indépendant, non affilié à Seeed Studio, ESPHome ni Home Assistant.
+Independent project, not affiliated with Seeed Studio, ESPHome or Home Assistant.

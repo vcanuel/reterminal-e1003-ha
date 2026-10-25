@@ -1,9 +1,9 @@
-# Météo d'une entité weather.* : conditions actuelles + prévisions sur 5 jours (action weather.get_forecasts).
+# Weather from a weather.* entity: current conditions + 5-day forecast (weather.get_forecasts action).
 #   packages:
-#     meteo: !include { file: widgets/weather.yaml, vars: { id: meteo, entity: weather.home } }
-# Dessin : id(meteo)(it, {x, y, 980, 620});
+#     weather: !include { file: widgets/weather.yaml, vars: { id: weather, entity: weather.home } }
+# Draw: id(weather)(it, {x, y, 980, 620});
 defaults:
-  id: meteo
+  id: weather
 
 esphome:
   includes:
@@ -50,7 +50,7 @@ script:
             entity_id: ${entity}
             type: daily
           capture_response: true
-          # Une ligne par jour : condition|max|min|précipitations|jour (0 = lundi)
+          # One line per day: condition|max|min|precipitation|weekday (0 = Monday)
           response_template: |-
             {%- for f in response['${entity}'].forecast[:5] -%}
             {{ f.condition }}|{{ f.temperature | round(0) | int }}|{{ (f.templow | default(f.temperature)) | round(0) | int }}|{{ f.precipitation | default(0) }}|{{ as_local(as_datetime(f.datetime)).weekday() }}

@@ -1,4 +1,4 @@
-# Compile example.yaml pour l'ESP32-S3 et le rend avec le simulateur (captures en artefact).
+# Compiles example.yaml for the ESP32-S3 and renders it with the simulator (screenshots as artifacts).
 name: Build
 
 on:
@@ -14,16 +14,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
-      - name: Installer ESPHome
+      - name: Install ESPHome
         run: pip install "esphome==${ESPHOME_VERSION}"
 
-      - name: Secrets factices
+      - name: Dummy secrets
         run: |
           cat > secrets.yaml <<EOS
           api_key: "$(openssl rand -base64 32)"
@@ -32,28 +32,28 @@ jobs:
           EOS
 
       - name: Cache ESP-IDF / PlatformIO
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cache/esphome
             ~/.platformio
           key: esphome-${{ env.ESPHOME_VERSION }}-${{ runner.os }}
 
-      - name: Compiler example.yaml (ESP32-S3)
+      - name: Compile example.yaml (ESP32-S3)
         run: esphome compile example.yaml
 
-      - name: Simulateur (captures du README)
+      - name: Simulator (README screenshots)
         run: |
           mkdir -p snapshots
           ESPHOME_SNAPSHOT_DIR=$PWD/snapshots esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml --no-logs
           test -s snapshots/example.bmp && test -s snapshots/example-lock.bmp
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
-          name: captures
+          name: screenshots
           path: snapshots/*.bmp
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: firmware
           path: .esphome/build/reterminal-e1003/build/firmware.factory.bin

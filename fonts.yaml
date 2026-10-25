@@ -1,5 +1,5 @@
-# Polices communes aux widgets (Inter + icônes Material Design), partagées par hardware.yaml et simulator.yaml.
-# Ajouter ses icônes à i_s :  font: [{ id: !extend i_s, glyphs: ["\U000Fxxxx"] }]
+# Fonts shared by the widgets (Inter + Material Design Icons), used by hardware.yaml and simulator.yaml.
+# Add your own icons to i_s:  font: [{ id: !extend i_s, glyphs: ["\U000Fxxxx"] }]
 font:
   - { file: "gfonts://Inter@700", id: f_h1, size: 64, bpp: 2, glyphsets: [GF_Latin_Core] }
   - { file: "gfonts://Inter@600", id: f_h2, size: 46, bpp: 2, glyphsets: [GF_Latin_Core] }
