@@ -1,0 +1,69 @@
+# Serrure (entité lock.*) : tuile d'état ; la toucher ouvre une sous-page verrouiller / déverrouiller / ouvrir
+# avec confirmation (actions lock.lock / lock.unlock / lock.open).
+#   packages:
+#     porte: !include { file: widgets/lock.yaml, vars: { id: porte, entity: lock.front_door, name: "Porte d'entrée" } }
+# Dessin : id(porte)(it, {x, y, 370, 220});
+defaults:
+  name: Porte
+  subtitle: ""
+
+esphome:
+  includes:
+    - lock.h
+
+globals:
+  - id: ${id}_step
+    type: int
+    restore_value: no
+    initial_value: '1'
+  - id: ${id}_pending
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: ${id}_msg
+    type: std::string
+    restore_value: no
+  - id: ${id}
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) {
+        ui::lock_tile(it, r, {"${id}", "${name}", "${subtitle}", ${id}_state, ${id}_step->value(), ${id}_pending->value(),
+                           ${id}_msg->value(), [](const std::string &a) { ${id}_cmd->execute(a); },
+                           ${id}_icon, ${id}_big});
+      }
+
+text_sensor:
+  - platform: homeassistant
+    id: ${id}_state
+    entity_id: ${entity}
+    on_value:
+      - if:
+          condition:
+            lambda: return ui::is_open("${id}") && id(${id}_step) == 1;
+          then:
+            - lambda: id(${id}_msg) = "";
+            - component.update: epaper_display
+
+script:
+  - id: ${id}_cmd
+    parameters:
+      svc: string
+    then:
+      - homeassistant.action:
+          action: !lambda return svc;
+          data:
+            entity_id: ${entity}
+          on_error:
+            - lambda: 'id(${id}_msg) = "Erreur : " + error;'
+            - component.update: epaper_display
+
+font:
+  - { file: "gfonts://Inter@700", id: "${id}_big", size: 110, bpp: 2, glyphs: "-.BDOVaegiloqrtuvé" }
+  - file: ../fonts/materialdesignicons-webfont.ttf
+    id: ${id}_icon
+    size: 280
+    bpp: 2
+    glyphs:
+      - "\U000F033E"  # lock
+      - "\U000F0FC6"  # lock-open-variant

@@ -1,0 +1,37 @@
+# Une pièce (entité climate.*) : température mesurée, consigne, humidité, chauffe en cours.
+# À instancier une fois par pièce, puis à lister dans ui::rooms :
+#   packages:
+#     salon: !include { file: widgets/room.yaml, vars: { id: salon, entity: climate.salon, name: Salon } }
+# Dessin : ui::rooms(it, {x, y, w, h}, "Pièces", {id(salon), id(cuisine)});
+esphome:
+  includes:
+    - rooms.h
+
+globals:
+  - id: ${id}
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) {
+        ui::room_row(it, r, {"${name}", ${id}_cur, ${id}_target, ${id}_hum, ${id}_action});
+      }
+
+sensor:
+  - platform: homeassistant
+    id: ${id}_cur
+    entity_id: ${entity}
+    attribute: current_temperature
+  - platform: homeassistant
+    id: ${id}_target
+    entity_id: ${entity}
+    attribute: temperature
+  - platform: homeassistant
+    id: ${id}_hum
+    entity_id: ${entity}
+    attribute: current_humidity
+
+text_sensor:
+  - platform: homeassistant
+    id: ${id}_action
+    entity_id: ${entity}
+    attribute: hvac_action

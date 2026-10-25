@@ -1,0 +1,23 @@
+# Tuile électricité : puissance instantanée d'un capteur en W (compteur P1, pince...).
+#   packages:
+#     elec: !include { file: widgets/power.yaml, vars: { id: elec, entity: sensor.p1_power } }
+# Dessin : id(elec)(it, {x, y, 370, 220});
+defaults:
+  title: Électricité
+  subtitle: consommation actuelle
+
+esphome:
+  includes:
+    - power.h
+
+globals:
+  - id: ${id}
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) { ui::power(it, r, "${title}", "${subtitle}", ${id}_power); }
+
+sensor:
+  - platform: homeassistant
+    id: ${id}_power
+    entity_id: ${entity}

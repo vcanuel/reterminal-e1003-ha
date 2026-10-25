@@ -1,0 +1,43 @@
+# Tuile voiture électrique : niveau de batterie (%), autonomie (km), puissance de charge (> 0 = en charge), branchée.
+#   packages:
+#     voiture: !include
+#       file: widgets/car.yaml
+#       vars:
+#         id: voiture
+#         name: Voiture
+#         battery: sensor.car_battery_level
+#         range: sensor.car_range
+#         charger_power: sensor.car_charger_power
+#         plugged: binary_sensor.car_plugged_in
+# Dessin : id(voiture)(it, {x, y, 370, 220});
+defaults:
+  name: Voiture
+
+esphome:
+  includes:
+    - car.h
+
+globals:
+  - id: ${id}
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) {
+        ui::car(it, r, {"${name}", ${id}_battery, ${id}_range, ${id}_charger_power, ${id}_plugged});
+      }
+
+sensor:
+  - platform: homeassistant
+    id: ${id}_battery
+    entity_id: ${battery}
+  - platform: homeassistant
+    id: ${id}_range
+    entity_id: ${range}
+  - platform: homeassistant
+    id: ${id}_charger_power
+    entity_id: ${charger_power}
+
+binary_sensor:
+  - platform: homeassistant
+    id: ${id}_plugged
+    entity_id: ${plugged}

@@ -1,0 +1,348 @@
+# Socle matériel du reTerminal E1003 (ePaper 10,3" 1872x1404, 16 niveaux de gris), indépendant de l'affichage :
+# ESP32-S3 + PSRAM, écran it8951, tactile GT911, buzzer, LED, batterie, chargeur SY6974B, bouton vert, veille.
+#
+# Rafraîchissement : au démarrage (connexion HA), toutes les ${refresh_interval}, au toucher, bouton vert ou bouton HA.
+# Chaque widget qui interroge HA s'y accroche avec `script: - id: !extend fetch_data`.
+# Sur batterie (PG_STAT du chargeur via I2C) : un rafraîchissement puis veille profonde ${sleep_duration}.
+#
+# Le fichier d'écran doit compléter l'affichage avec son lambda de mise en page :
+#   display:
+#     - id: !extend epaper_display
+#       lambda: |-
+#         if (ui::begin(it)) return;   // écran Wi-Fi ou sous-page
+#         ...
+
+packages:
+  fonts: !include fonts.yaml
+
+substitutions:
+  name: reterminal-e1003
+  friendly_name: reTerminal E1003
+  ap_ssid: reTerminal-E1003
+  refresh_interval: 5min
+  sleep_duration: 30min
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  includes:
+    - ui.h
+  on_boot:
+    - priority: 600
+      then:
+        # Réveil de veille par le bouton vert : on_press ne se déclenche pas (bouton déjà relâché), on bipe ici.
+        - if:
+            condition:
+              lambda: |-
+                auto cause = esp_sleep_get_wakeup_cause();
+                return cause == ESP_SLEEP_WAKEUP_EXT0 || cause == ESP_SLEEP_WAKEUP_EXT1;
+            then:
+              - script.execute: beep
+    - priority: -100
+      then:
+        - output.turn_on: bsp_battery_enable
+        - delay: 20s
+        - if:
+            condition:
+              not:
+                wifi.connected:
+            then:
+              - component.update: epaper_display
+
+esp32:
+  board: seeed_xiao_esp32s3
+  flash_size: 8MB
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+
+logger:
+  hardware_uart: UART0
+
+api:
+  encryption:
+    key: !secret api_key
+  # Rafraîchit dès que HA est connecté (laisse le temps à HA de s'abonner aux actions).
+  on_client_connected:
+    - delay: 5s
+    - script.execute: refresh
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+    on_begin:
+      - deep_sleep.prevent: deep_sleep_1
+
+# Pas d'identifiants Wi-Fi dans le firmware : au premier démarrage l'écran ouvre le point
+# d'accès "${ap_ssid}", on choisit son réseau via le portail captif (stocké en flash).
+wifi:
+  id: wifi_comp
+  ap:
+    ssid: ${ap_ssid}
+    password: !secret ap_password
+
+captive_portal:
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+globals:
+  - id: ap_ssid
+    type: std::string
+    restore_value: no
+    initial_value: '"${ap_ssid}"'
+  # Tension mesurée au rafraîchissement précédent (survit à la veille profonde).
+  - id: last_vbat
+    type: float
+    restore_value: yes
+    initial_value: '0'
+  - id: last_touch
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+  - id: on_mains
+    type: bool
+    restore_value: yes
+    initial_value: 'true'
+  # Dernier REG08 du chargeur, -1 si la lecture I2C a échoué.
+  - id: charger_stat
+    type: int
+    restore_value: no
+    initial_value: '-1'
+
+sensor:
+  - platform: adc
+    pin: GPIO1
+    name: "Batterie tension"
+    id: battery_voltage
+    update_interval: 60s
+    attenuation: 12db
+    samples: 64
+    filters:
+      - multiply: 2.0
+  - platform: copy
+    source_id: battery_voltage
+    name: "Batterie"
+    id: battery_level
+    unit_of_measurement: "%"
+    device_class: battery
+    accuracy_decimals: 0
+    filters:
+      - calibrate_linear:
+          - 4.15 -> 100.0
+          - 3.96 -> 90.0
+          - 3.91 -> 80.0
+          - 3.85 -> 70.0
+          - 3.80 -> 60.0
+          - 3.75 -> 50.0
+          - 3.68 -> 40.0
+          - 3.58 -> 30.0
+          - 3.49 -> 20.0
+          - 3.41 -> 10.0
+          - 3.30 -> 5.0
+          - 3.27 -> 0.0
+      - clamp:
+          min_value: 0
+          max_value: 100
+
+binary_sensor:
+  - platform: template
+    id: mains_sensor
+    name: "Sur secteur"
+    device_class: plug
+    lambda: return id(on_mains);
+  - platform: template
+    id: charging_sensor
+    name: "En charge"
+    device_class: battery_charging
+    lambda: |-
+      int s = (id(charger_stat) >> 3) & 3;
+      return id(charger_stat) >= 0 && (s == 1 || s == 2);
+  - platform: gpio
+    id: key_green
+    name: "Bouton vert"
+    pin:
+      number: GPIO3
+      allow_other_uses: true
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - script.execute: beep
+      - script.execute: refresh
+
+output:
+  - platform: gpio
+    pin: GPIO16
+    id: bsp_led
+    inverted: true
+  - platform: gpio
+    pin: GPIO40
+    id: bsp_battery_enable
+  - platform: ledc
+    pin: GPIO45
+    id: buzzer
+    frequency: 1500Hz
+
+light:
+  - platform: binary
+    name: "LED"
+    output: bsp_led
+    id: onboard_led
+
+button:
+  - platform: template
+    name: "Rafraîchir l'écran"
+    on_press:
+      - script.execute: refresh
+
+deep_sleep:
+  id: deep_sleep_1
+  sleep_duration: ${sleep_duration}
+  wakeup_pin:               # bouton vert
+    number: GPIO3
+    allow_other_uses: true
+  wakeup_pin_mode: INVERT_WAKEUP
+
+interval:
+  # Retour au tableau de bord 2 min après le dernier toucher sur une sous-page.
+  - interval: 30s
+    then:
+      - if:
+          condition:
+            lambda: return !ui::on_dashboard() && millis() - id(last_touch) > 120000;
+          then:
+            - lambda: ui::close();
+            - component.update: epaper_display
+  - interval: ${refresh_interval}
+    then:
+      - script.execute: refresh
+  - interval: 2s
+    then:
+      - script.execute: read_charger
+
+script:
+  - id: beep
+    mode: restart
+    then:
+      - output.set_level:
+          id: buzzer
+          level: 8%
+      - delay: 50ms
+      - output.turn_off: buzzer
+  - id: read_charger
+    mode: single
+    then:
+      - lambda: |-
+          uint8_t st;
+          if (!id(charger).read_byte(0x08, &st)) {
+            if (id(charger_stat) >= 0) ESP_LOGW("power", "SY6974B ne répond pas, secours par la tension");
+            id(charger_stat) = -1;
+            return;
+          }
+          const bool was = id(on_mains), now = st & 0x04;  // PG_STAT
+          id(charger_stat) = st;
+          id(on_mains) = now;
+          if (was && !now) {
+            ESP_LOGI("power", "USB débranché");
+            id(refresh).execute();  // rafraîchit puis part en veille
+          }
+  # Appels d'actions HA des widgets (weather.get_forecasts, calendar.get_events...), complété par les paquets.
+  - id: fetch_data
+    mode: single
+    then:
+      - logger.log: "Récupération des données HA"
+  - id: refresh
+    mode: single
+    then:
+      - light.turn_on: onboard_led
+      # Secteur ou batterie : PG_STAT du chargeur. Secours si l'I2C échoue : saut de tension
+      # (brancher l'USB fait monter Vbat de ~0,03-0,07 V, débrancher la fait baisser ; >= 4,12 V = fin de charge).
+      - script.execute: read_charger
+      - script.wait: read_charger
+      - component.update: battery_voltage
+      - lambda: |-
+          float v = id(battery_voltage).state;
+          if (id(charger_stat) >= 0) {
+            if (!std::isnan(v)) id(last_vbat) = v;
+            ESP_LOGI("power", "Vbat %.3f V, REG08 0x%02X -> %s", v, id(charger_stat), id(on_mains) ? "secteur" : "batterie");
+          } else if (!std::isnan(v)) {
+            float delta = id(last_vbat) > 0 ? v - id(last_vbat) : 0;
+            if (v >= 4.12f || delta >= 0.01f) id(on_mains) = true;
+            else if (delta <= -0.01f) id(on_mains) = false;
+            id(last_vbat) = v;
+            ESP_LOGI("power", "Vbat %.3f V -> %s", v, id(on_mains) ? "secteur" : "batterie");
+          }
+          id(mains_sensor).publish_state(id(on_mains));
+      - wait_until:
+          condition: api.connected
+          timeout: 30s
+      - delay: 1s
+      - script.execute: fetch_data
+      - script.wait: fetch_data
+      # Les actions sont asynchrones : on laisse le temps aux réponses d'arriver.
+      - delay: 8s
+      - component.update: epaper_display
+      - light.turn_off: onboard_led
+      - if:
+          condition:
+            lambda: return !id(on_mains);
+          then:
+            - delay: 10s   # fin du rafraîchissement ePaper + envoi des états à HA
+            - deep_sleep.enter: deep_sleep_1
+
+i2c:
+  scl: GPIO20
+  sda: GPIO19
+
+# Chargeur SY6974B (schéma E1003 v1.0, page 4/8). Sa broche /INT n'arrive sur aucun GPIO (point de test TP53),
+# mais il est sur l'I2C : REG08 bit 2 = PG_STAT (entrée USB valide), bits 4:3 = CHRG_STAT.
+i2c_device:
+  id: charger
+  address: 0x6B
+
+# Toucher dans une zone déclarée par un widget : bip + action + redessin.
+# Ailleurs sur le tableau de bord : bip + rafraîchissement. Ailleurs sur une sous-page : rien.
+touchscreen:
+  - platform: gt911
+    id: e1003_touch
+    display: epaper_display
+    interrupt_pin: GPIO2
+    reset_pin: GPIO48
+    on_touch:
+      - lambda: |-
+          ESP_LOGI("touch", "x=%d y=%d page=%s", touch.x, touch.y, ui::page().key.c_str());
+          if (millis() - id(last_touch) < 1500) return;  // l'ePaper met ~1 s à se redessiner
+          id(last_touch) = millis();
+          const bool dashboard = ui::on_dashboard();
+          if (ui::touch(touch.x, touch.y)) {
+            id(beep).execute();
+            id(epaper_display).update();
+          } else if (dashboard) {
+            id(beep).execute();
+            id(refresh).execute();
+          }
+
+spi:
+  id: epaper_spi_bus
+  clk_pin: GPIO7
+  mosi_pin: GPIO9
+  miso_pin: GPIO8
+
+display:
+  - platform: it8951
+    id: epaper_display
+    spi_id: epaper_spi_bus
+    model: seeed-reterminal-e1003
+    update_interval: never
+    grayscale: true
+    dithering: true
+    update_mode: GC16
+    transform:
+      mirror_x: true
+      mirror_y: false
+    # Remplacé par le lambda de mise en page du fichier d'écran.
+    lambda: |-
+      ui::begin(it);

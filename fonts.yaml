@@ -1,0 +1,25 @@
+# Polices communes aux widgets (Inter + icônes Material Design), partagées par hardware.yaml et simulator.yaml.
+# Ajouter ses icônes à i_s :  font: [{ id: !extend i_s, glyphs: ["\U000Fxxxx"] }]
+font:
+  - { file: "gfonts://Inter@700", id: f_h1, size: 64, bpp: 2, glyphsets: [GF_Latin_Core] }
+  - { file: "gfonts://Inter@600", id: f_h2, size: 46, bpp: 2, glyphsets: [GF_Latin_Core] }
+  - { file: "gfonts://Inter@600", id: f_txt_b, size: 40, bpp: 2, glyphsets: [GF_Latin_Core] }
+  - { file: "gfonts://Inter@400", id: f_txt, size: 40, bpp: 2, glyphsets: [GF_Latin_Core] }
+  - { file: "gfonts://Inter@400", id: f_small, size: 32, bpp: 2, glyphsets: [GF_Latin_Core] }
+  - file: fonts/materialdesignicons-webfont.ttf
+    id: i_s
+    size: 56
+    bpp: 2
+    glyphs:
+      - "\U000F033E"  # lock
+      - "\U000F0FC6"  # lock-open-variant
+      - "\U000F0241"  # flash
+      - "\U000F0B6C"  # car-electric
+      - "\U000F02DC"  # home
+      - "\U000F0238"  # fire
+      - "\U000F0E18"  # calendar-month-outline
+      - "\U000F0F54"  # home-thermometer
+      - "\U000F058E"  # water-percent
+      - "\U000F06A5"  # power-plug
+      - "\U000F0084"  # battery-charging
+      - "\U000F0079"  # battery

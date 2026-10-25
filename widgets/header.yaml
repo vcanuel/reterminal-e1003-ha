@@ -1,0 +1,5 @@
+# En-tête : date, heure de mise à jour, alimentation. Aucune entité HA.
+# Dessin : ui::header(it, {x, y, w, h})   (h ~ 100)
+esphome:
+  includes:
+    - header.h

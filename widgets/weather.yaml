@@ -1,0 +1,93 @@
+# Météo d'une entité weather.* : conditions actuelles + prévisions sur 5 jours (action weather.get_forecasts).
+#   packages:
+#     meteo: !include { file: widgets/weather.yaml, vars: { id: meteo, entity: weather.home } }
+# Dessin : id(meteo)(it, {x, y, 980, 620});
+defaults:
+  id: meteo
+
+esphome:
+  includes:
+    - weather.h
+
+globals:
+  - id: ${id}_forecast
+    type: std::string
+    restore_value: no
+  - id: ${id}
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) {
+        ui::weather(it, r, {${id}_state, ${id}_temp, ${id}_hum, ${id}_wind, ${id}_forecast->value(),
+                              ${id}_icon_xl, ${id}_icon_m, ${id}_temp_xl});
+      }
+
+sensor:
+  - platform: homeassistant
+    id: ${id}_temp
+    entity_id: ${entity}
+    attribute: temperature
+  - platform: homeassistant
+    id: ${id}_hum
+    entity_id: ${entity}
+    attribute: humidity
+  - platform: homeassistant
+    id: ${id}_wind
+    entity_id: ${entity}
+    attribute: wind_speed
+
+text_sensor:
+  - platform: homeassistant
+    id: ${id}_state
+    entity_id: ${entity}
+
+script:
+  - id: !extend fetch_data
+    then:
+      - homeassistant.action:
+          action: weather.get_forecasts
+          data:
+            entity_id: ${entity}
+            type: daily
+          capture_response: true
+          # Une ligne par jour : condition|max|min|précipitations|jour (0 = lundi)
+          response_template: |-
+            {%- for f in response['${entity}'].forecast[:5] -%}
+            {{ f.condition }}|{{ f.temperature | round(0) | int }}|{{ (f.templow | default(f.temperature)) | round(0) | int }}|{{ f.precipitation | default(0) }}|{{ as_local(as_datetime(f.datetime)).weekday() }}
+            {% endfor -%}
+          on_success:
+            - lambda: |-
+                auto v = response["response"];
+                id(${id}_forecast) = v.is<const char *>() ? std::string(v.as<const char *>()) : "";
+          on_error:
+            - logger.log:
+                format: "weather.get_forecasts: %s"
+                args: ["error.c_str()"]
+
+font:
+  - { file: "gfonts://Inter@700", id: "${id}_temp_xl", size: 230, bpp: 2, glyphs: "0123456789-.°" }
+  - file: ../fonts/materialdesignicons-webfont.ttf
+    id: ${id}_icon_xl
+    size: 300
+    bpp: 2
+    glyphs: &weather_glyphs
+      - "\U000F0594"  # weather-night
+      - "\U000F0590"  # weather-cloudy
+      - "\U000F0591"  # weather-fog
+      - "\U000F0592"  # weather-hail
+      - "\U000F0593"  # weather-lightning
+      - "\U000F067E"  # weather-lightning-rainy
+      - "\U000F0595"  # weather-partly-cloudy
+      - "\U000F0596"  # weather-pouring
+      - "\U000F0597"  # weather-rainy
+      - "\U000F0598"  # weather-snowy
+      - "\U000F067F"  # weather-snowy-rainy
+      - "\U000F0599"  # weather-sunny
+      - "\U000F059D"  # weather-windy
+      - "\U000F059E"  # weather-windy-variant
+      - "\U000F05D6"  # alert-circle-outline
+  - file: ../fonts/materialdesignicons-webfont.ttf
+    id: ${id}_icon_m
+    size: 100
+    bpp: 2
+    glyphs: *weather_glyphs

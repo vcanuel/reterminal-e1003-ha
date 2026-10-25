@@ -1,0 +1,57 @@
+# Agenda : prochains événements (action calendar.get_events) d'un ou plusieurs calendriers, triés par date.
+#   packages:
+#     agenda: !include
+#       file: widgets/agenda.yaml
+#       vars: { id: agenda, calendars: "calendar.famille, calendar.anniversaires" }
+# Dessin : id(agenda)(it, {x, y, w, 85 + 66 * max_events});
+defaults:
+  id: agenda
+  title: Agenda
+  duration: "168:00:00"   # fenêtre de recherche (7 jours)
+  max_events: "7"
+  max_chars: "30"          # longueur max d'un titre d'événement
+
+esphome:
+  includes:
+    - agenda.h
+
+globals:
+  - id: ${id}_events
+    type: std::string
+    restore_value: no
+  - id: ${id}
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) {
+        ui::agenda(it, r, "${title}", ${id}_events->value(), ${max_events});
+      }
+
+script:
+  - id: !extend fetch_data
+    then:
+      - homeassistant.action:
+          action: calendar.get_events
+          data:
+            entity_id: ${calendars}
+            duration: ${duration}
+          capture_response: true
+          # Une ligne par événement : jour|heure|titre
+          response_template: |-
+            {%- set ns = namespace(ev=[]) -%}
+            {%- for k, v in response.items() -%}{%- set ns.ev = ns.ev + v.events -%}{%- endfor -%}
+            {%- set jours = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] -%}
+            {%- set today = now().date() -%}
+            {%- for e in (ns.ev | sort(attribute='start'))[:${max_events}] -%}
+            {%- set d = strptime(e.start[:10], '%Y-%m-%d').date() -%}
+            {%- if d <= today -%}Auj.{%- elif d == today + timedelta(days=1) -%}Demain{%- else -%}{{ jours[d.weekday()] }} {{ d.day }}{%- endif -%}
+            |{{ e.start[11:16] }}|{{ e.summary | replace('|', '/') | replace('\n', ' ') | truncate(${max_chars}, true, '...', 0) }}
+            {% endfor -%}
+          on_success:
+            - lambda: |-
+                auto v = response["response"];
+                id(${id}_events) = v.is<const char *>() ? std::string(v.as<const char *>()) : "";
+          on_error:
+            - logger.log:
+                format: "calendar.get_events: %s"
+                args: ["error.c_str()"]
