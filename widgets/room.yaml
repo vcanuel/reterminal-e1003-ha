@@ -1,19 +1,35 @@
 # One room (climate.* entity): measured temperature, target, humidity, heating indicator.
+# Touching the row opens a sub-page: target -/+ (climate.set_temperature, sent 2 s after the last touch)
+# and hvac mode (climate.set_hvac_mode).
 # Include once per room, then list the rooms in ui::rooms:
 #   packages:
 #     living_room: !include { file: widgets/room.yaml, vars: { id: living_room, entity: climate.living_room, name: Living room } }
 # Draw: ui::rooms(it, {x, y, w, h}, "Rooms", {id(living_room), id(kitchen)});
+defaults:
+  modes: "heat,off"   # hvac modes offered on the sub-page (see the entity's hvac_modes attribute), e.g. "auto,heat,off"
+  step: "0.5"         # target step (°)
+
 esphome:
   includes:
     - rooms.h
 
 globals:
+  - id: ${id}_set
+    type: float
+    restore_value: no
+    initial_value: NAN
+  - id: ${id}_msg
+    type: std::string
+    restore_value: no
   - id: ${id}
     type: std::function<void(display::Display &, display::Rect)>
     restore_value: no
     initial_value: |-
       [](display::Display &it, display::Rect r) {
-        ui::room_row(it, r, {"${name}", ${id}_cur, ${id}_target, ${id}_hum, ${id}_action});
+        ui::room_row(it, r, {"${id}", "${name}", ${id}_cur, ${id}_target, ${id}_hum, ${id}_min, ${id}_max,
+                             ${id}_action, ${id}_mode, "${modes}", ${step}, ${id}_set->value(), ${id}_msg->value(),
+                             [] { ${id}_send_target->execute(); },
+                             [](const std::string &m) { ${id}_send_mode->execute(m); }});
       }
 
 sensor:
@@ -21,17 +37,85 @@ sensor:
     id: ${id}_cur
     entity_id: ${entity}
     attribute: current_temperature
+    on_value:
+      - script.execute: ${id}_redraw
   - platform: homeassistant
     id: ${id}_target
     entity_id: ${entity}
     attribute: temperature
+    on_value:
+      # HA confirms the target being changed: show HA's again.
+      - lambda: |-
+          if (!std::isnan(id(${id}_set)) && std::fabs(x - id(${id}_set)) < 0.05f) {
+            id(${id}_set) = NAN;
+            id(${id}_msg) = "";
+          }
+      - script.execute: ${id}_redraw
   - platform: homeassistant
     id: ${id}_hum
     entity_id: ${entity}
     attribute: current_humidity
+  - platform: homeassistant
+    id: ${id}_min
+    entity_id: ${entity}
+    attribute: min_temp
+  - platform: homeassistant
+    id: ${id}_max
+    entity_id: ${entity}
+    attribute: max_temp
 
 text_sensor:
   - platform: homeassistant
     id: ${id}_action
     entity_id: ${entity}
     attribute: hvac_action
+    on_value:
+      - script.execute: ${id}_redraw
+  - platform: homeassistant
+    id: ${id}_mode
+    entity_id: ${entity}
+    on_value:
+      - lambda: id(${id}_msg) = "";
+      - script.execute: ${id}_redraw
+
+script:
+  # Redraw the open sub-page when HA reports a change (grouped: one entity update = several attributes).
+  - id: ${id}_redraw
+    mode: restart
+    then:
+      - delay: 500ms
+      - if:
+          condition:
+            lambda: return ui::is_open("${id}");
+          then:
+            - component.update: epaper_display
+  # Sends the target 2 s after the last -/+ touch.
+  - id: ${id}_send_target
+    mode: restart
+    then:
+      - delay: 2s
+      - homeassistant.action:
+          action: climate.set_temperature
+          data:
+            entity_id: ${entity}
+            temperature: !lambda 'return str_sprintf("%.1f", id(${id}_set));'
+          on_success:
+            - lambda: id(${id}_msg) = ui::tr().sent;
+            - script.execute: ${id}_redraw
+          on_error:
+            - lambda: |-
+                id(${id}_set) = NAN;
+                id(${id}_msg) = std::string(ui::tr().error) + error;
+            - script.execute: ${id}_redraw
+  - id: ${id}_send_mode
+    parameters:
+      mode: string
+    then:
+      - homeassistant.action:
+          action: climate.set_hvac_mode
+          data:
+            entity_id: ${entity}
+            hvac_mode: !lambda return mode;
+          on_error:
+            - lambda: 'id(${id}_msg) = std::string(ui::tr().error) + error;'
+            - script.execute: ${id}_redraw

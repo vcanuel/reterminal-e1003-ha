@@ -31,7 +31,7 @@ Left:
 ## 3. Upcoming features
 
 - [x] Weather sub-page (touch): current details, next 12 hours, next 7 days (2026-10-26).
-- [ ] Heating sub-page per room (target +/− 0.5 °C).
+- [x] Heating sub-page per room: target −/+ 0.5 °C, hvac mode (2026-10-26).
 - [ ] Photo "memories" page (source to define: Synology Photos, Immich…), via `online_image`.
 - [ ] Anti-ghosting clean-up (INIT mode) once an hour.
 - [ ] Calendar: filter observance days ("Daylight saving time ends", etc.).

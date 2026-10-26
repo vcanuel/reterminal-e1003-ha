@@ -2,6 +2,7 @@
 # Add your own icons to i_s:  font: [{ id: !extend i_s, glyphs: ["\U000Fxxxx"] }]
 font:
   - { file: "gfonts://Inter@700", id: f_h1, size: 64, bpp: 2, glyphsets: [GF_Latin_Core] }
+  - { file: "gfonts://Inter@700", id: f_xl, size: 180, bpp: 2, glyphs: "0123456789-.°" }
   - { file: "gfonts://Inter@600", id: f_h2, size: 46, bpp: 2, glyphsets: [GF_Latin_Core] }
   - { file: "gfonts://Inter@600", id: f_txt_b, size: 40, bpp: 2, glyphsets: [GF_Latin_Core] }
   - { file: "gfonts://Inter@400", id: f_txt, size: 40, bpp: 2, glyphsets: [GF_Latin_Core] }
@@ -23,3 +24,5 @@ font:
       - "\U000F06A5"  # power-plug
       - "\U000F0084"  # battery-charging
       - "\U000F0079"  # battery
+      - "\U000F1639"  # minus-thick
+      - "\U000F11EC"  # plus-thick

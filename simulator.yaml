@@ -3,7 +3,8 @@
 #
 #   ESPHOME_SNAPSHOT_DIR=$PWD/docs .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml
 #
-# Writes example.bmp (dashboard), example-weather.bmp and example-lock.bmp (sub-pages), then exits.
+# Writes example.bmp (dashboard), example-weather.bmp, example-room.bmp and example-lock.bmp
+# (sub-pages), then exits.
 # The demo data below targets the ids of example.yaml.
 
 packages:
@@ -58,16 +59,17 @@ esphome:
                 "3|2|28|09:00|Parent-teacher meeting\n"
                 "5|4|30|20:00|Dinner at Alice's\n";
 
-            const struct { sensor::Sensor *cur, *target, *hum; text_sensor::TextSensor *action; float c, t, h; const char *a; } rooms[] = {
-              {id(living_room_cur), id(living_room_target), id(living_room_hum), id(living_room_action), 20.1, 19.5, 52, "heating"},
-              {id(bedroom_cur), id(bedroom_target), id(bedroom_hum), id(bedroom_action), 18.4, 17.0, 55, "idle"},
-              {id(office_cur), id(office_target), id(office_hum), id(office_action), 19.8, 19.0, 48, "idle"},
+            const struct { sensor::Sensor *cur, *target, *hum; text_sensor::TextSensor *action, *mode; float c, t, h; const char *a; } rooms[] = {
+              {id(living_room_cur), id(living_room_target), id(living_room_hum), id(living_room_action), id(living_room_mode), 20.1, 19.5, 52, "heating"},
+              {id(bedroom_cur), id(bedroom_target), id(bedroom_hum), id(bedroom_action), id(bedroom_mode), 18.4, 17.0, 55, "idle"},
+              {id(office_cur), id(office_target), id(office_hum), id(office_action), id(office_mode), 19.8, 19.0, 48, "idle"},
             };
             for (auto &r : rooms) {
               r.cur->publish_state(r.c);
               r.target->publish_state(r.t);
               r.hum->publish_state(r.h);
               r.action->publish_state(r.a);
+              r.mode->publish_state("auto");
             }
 
             id(power_meter_power).publish_state(389);
@@ -88,6 +90,14 @@ esphome:
         - snapshot.take:
             id: epaper_display
             filename: example-weather.bmp
+        # Back to the dashboard, then touching the first room opens its sub-page.
+        - lambda: ui::close();
+        - component.update: epaper_display
+        - lambda: ui::touch(1200, 280);
+        - component.update: epaper_display
+        - snapshot.take:
+            id: epaper_display
+            filename: example-room.bmp
         # Back to the dashboard, then touching the lock tile opens its sub-page.
         - lambda: ui::close();
         - component.update: epaper_display

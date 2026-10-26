@@ -21,7 +21,9 @@ packages:
   agenda: !include
     file: widgets/agenda.yaml
     vars: { id: agenda, calendars: "calendar.family, calendar.birthdays" }
-  living_room: !include { file: widgets/room.yaml, vars: { id: living_room, entity: climate.living_room, name: Living room } }
+  living_room: !include
+    file: widgets/room.yaml
+    vars: { id: living_room, entity: climate.living_room, name: Living room, modes: "auto,heat,off" }
   bedroom: !include { file: widgets/room.yaml, vars: { id: bedroom, entity: climate.bedroom, name: Bedroom } }
   office: !include { file: widgets/room.yaml, vars: { id: office, entity: climate.office, name: Office } }
   power_meter: !include { file: widgets/power.yaml, vars: { id: power_meter, entity: sensor.power_consumption } }

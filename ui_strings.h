@@ -32,6 +32,9 @@ struct Strings {
   const char *weather_title, *feels_like, *dew_point, *gusts, *pressure, *uv_index, *clouds, *visibility;
   const char *next_hours, *next_days;
   const char *compass[8];  // N, NE, E... (wind bearing)
+  // Room sub-page: hvac_action, hvac modes
+  const char *temperature, *target, *mode, *heating, *idle;
+  const char *mode_off, *mode_heat, *mode_cool, *mode_heat_cool, *mode_auto;
 };
 
 static const Strings EN = {
@@ -89,6 +92,16 @@ static const Strings EN = {
     "Next hours",
     "Next days",
     {"N", "NE", "E", "SE", "S", "SW", "W", "NW"},
+    "Temperature",
+    "Target",
+    "Mode",
+    "Heating",
+    "Idle",
+    "Off",
+    "Heat",
+    "Cool",
+    "Heat/Cool",
+    "Auto",
 };
 
 static const Strings FR = {
@@ -146,6 +159,16 @@ static const Strings FR = {
     "Prochaines heures",
     "Prochains jours",
     {"N", "NE", "E", "SE", "S", "SO", "O", "NO"},
+    "Température",
+    "Consigne",
+    "Mode",
+    "Chauffe",
+    "Au repos",
+    "Arrêt",
+    "Chauffage",
+    "Froid",
+    "Chaud/froid",
+    "Auto",
 };
 
 // Texts for the configured language (English by default).
