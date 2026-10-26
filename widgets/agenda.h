@@ -1,6 +1,7 @@
 // Calendar: next events from one or more calendars; touching it (or the header date) opens a month view.
 #pragma once
 #include <ctime>
+#include <map>
 #include "ui.h"
 
 namespace ui {
@@ -9,11 +10,12 @@ namespace ui {
 // (see widgets/agenda.yaml).
 // ---------- Month view ----------
 struct Month {
-  const char *key;      // widget id (sub-page key)
-  int &offset;          // months from the current one
-  std::string &events;  // one line per event: start|end (exclusive)|time|title, dates as YYYY-MM-DD
-  bool &loading;        // waiting for calendar.get_events
-  void (*fetch)();      // fetches the events of the displayed grid
+  const char *key;  // widget id (sub-page key)
+  int &offset;      // months from the current one
+  // Events per month offset, one line per event: start|end (exclusive)|time|title, dates as YYYY-MM-DD.
+  // A missing month is being fetched; emptied when the view opens.
+  std::map<int, std::string> &cache;
+  void (*fetch)(int offset);  // queues calendar.get_events for that month's grid
 };
 
 // Grid of the displayed month: Monday of the first week, number of weeks (local noon, safe for DST).
@@ -80,25 +82,29 @@ inline std::string clip(Display &it, std::string s, font::Font *f, int w) {
 inline void month_page(Display &it, const Month &m);
 
 // Opens the month view on the current month; the screen is redrawn when the events arrive.
+// Shows month `offset`: from the cache right away, otherwise when its events arrive (hold).
+// Then prefetches the months around it, so that the next / previous one shows up without waiting for HA.
+inline void month_show(const Month &m, int offset) {
+  m.offset = offset;
+  if (!m.cache.count(offset)) {
+    m.fetch(offset);
+    hold();
+  }
+  for (int o : {offset + 1, offset - 1})
+    if (!m.cache.count(o)) m.fetch(o);
+}
+
+// Opens the month view on the current month, with fresh events.
 inline void month_open(const Month &m) {
-  m.offset = 0;
-  m.loading = true;
-  m.fetch();
+  m.cache.clear();
   open(m.key, [m](Display &it) { month_page(it, m); });
-  hold();
+  month_show(m, 0);
 }
 
 inline void month_page(Display &it, const Month &m) {
   const Strings &t = tr();
   const MonthGrid g = month_grid(m.offset);
-  auto go = [m](int delta) {
-    return [m, delta] {
-      m.offset = delta == 0 ? 0 : m.offset + delta;
-      m.loading = true;
-      m.fetch();
-      hold();
-    };
-  };
+  auto go = [m](int delta) { return [m, delta] { month_show(m, delta == 0 ? 0 : m.offset + delta); }; };
 
   // Header: Back, month (touch: back to the current month), previous / next.
   button(it, {48, 30, 300, 100}, t.back, false, ui::close);
@@ -106,7 +112,8 @@ inline void month_page(Display &it, const Month &m) {
   title[0] = toupper(title[0]);
   txt(it, 836, 50, f_h1, BLACK, TextAlign::TOP_CENTER, title);
   if (m.offset != 0) zone({400, 20, 870, 120}, go(0));
-  if (m.loading) txt(it, 836, 125, f_small, GRAY, TextAlign::TOP_CENTER, t.loading);
+  auto cached = m.cache.find(m.offset);
+  if (cached == m.cache.end()) txt(it, 836, 125, f_small, GRAY, TextAlign::TOP_CENTER, t.loading);
   button(it, {1324, 30, 240, 100}, "", false, go(-1));
   txt(it, 1444, 80, i_s, BLACK, TextAlign::CENTER, "\U000F0141");
   button(it, {1584, 30, 240, 100}, "", false, go(1));
@@ -118,7 +125,7 @@ inline void month_page(Display &it, const Month &m) {
     std::string start, end, time, title;
   };
   std::vector<Ev> evs;
-  for (auto &line : split(m.events, '\n')) {
+  for (auto &line : split(cached == m.cache.end() ? "" : cached->second, '\n')) {
     auto f = split(line, '|');
     if (f.size() >= 4) evs.push_back({f[0], f[1], f[2], f[3]});
   }
