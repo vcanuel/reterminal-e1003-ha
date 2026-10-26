@@ -71,6 +71,14 @@ inline std::vector<Zone> &zones() {
 }
 inline void zone(Rect r, std::function<void()> fn) { zones().push_back({r, std::move(fn)}); }
 
+// A zone that waits for data (e.g. an HA action response) calls hold(): the touch does not redraw the screen,
+// the widget redraws it when the data arrives (one ePaper refresh instead of two).
+inline bool &held() {
+  static bool h = false;
+  return h;
+}
+inline void hold() { held() = true; }
+
 // Runs the touched zone; false when the touch is outside every zone.
 inline bool touch(int x, int y) {
   for (auto &z : zones())

@@ -12,7 +12,7 @@ in **plain ESPHome**: nothing to set up in Home Assistant besides allowing actio
 - Weather (current + 5 days) and calendar fetched with the HA actions `weather.get_forecasts` /
   `calendar.get_events` and `response_template`: no template sensor to create in HA.
 - Rooms (climate.*), power, lock, electric car, presence through `homeassistant` sensors.
-- Touch: weather sub-page (details, next 12 hours, next 7 days), room sub-page (target −/+, hvac mode), Tesla sub-page
+- Touch: month calendar (header date or calendar widget; previous / next month), weather sub-page (details, next 12 hours, next 7 days), room sub-page (target −/+, hvac mode), Tesla sub-page
   (TeslaMate: charge, vehicle, climate, tyres, software), lock sub-page (lock / unlock / open, with
   confirmation; doorbell next to it: Ring to Open, buzz, last ring; shown by itself when someone rings, on mains;
   bell on the front door tile while Ring to Open is on), feedback beep, back to the dashboard after 2 min.
@@ -36,9 +36,9 @@ simulator.yaml       replaces hardware.yaml on a computer to render the screensh
 
 | Widget | Package (vars) | Drawing |
 |---|---|---|
-| Header (date, last update, power) | `widgets/header.yaml` | `ui::header(it, {x, y, w, h})` |
+| Header (date, last update, power) | `widgets/header.yaml` | `ui::header(it, {x, y, w, h}, "agenda")` (date opens the month view) |
 | Weather, current + 5 days + sub-page | `widgets/weather.yaml` (`id`, `entity`) | `id(weather)(it, {x, y, 980, 620})` |
-| Calendar | `widgets/agenda.yaml` (`id`, `calendars`, `title`, `duration`, `max_events`, `max_chars`) | `id(agenda)(it, {x, y, w, h})` |
+| Calendar + month view | `widgets/agenda.yaml` (`id`, `calendars`, `title`, `duration`, `max_events`, `max_chars`) | `id(agenda)(it, {x, y, w, h})` |
 | Room (climate.*) + sub-page | `widgets/room.yaml` (`id`, `entity`, `name`, `modes`, `step`), one per room | `ui::rooms(it, r, "Rooms", {id(living_room), ...})` |
 | Power | `widgets/power.yaml` (`id`, `entity`, `title`, `subtitle`) | `id(power_meter)(it, {x, y, 370, 220})` |
 | Lock + sub-page | `widgets/lock.yaml` (`id`, `entity`, `name`, `subtitle`) | `id(front_door)(it, {x, y, 370, 220})` |
@@ -86,15 +86,15 @@ mkdir -p private && cp example.yaml private/my-screen.yaml    # private/ is igno
 ## Screenshots (simulator)
 
 `simulator.yaml` replaces `hardware.yaml` with ESPHome's `host` platform and an in-memory display: it draws
-`example.yaml` with demo data, saves the dashboard and the weather, room, car and lock sub-pages, then exits. No screen or Home Assistant
+`example.yaml` with demo data, saves the dashboard and the weather, month, room, car and lock sub-pages, then exits. No screen or Home Assistant
 needed.
 
 ```bash
 ESPHOME_SNAPSHOT_DIR=$PWD/docs .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml --no-logs
-for f in example example-weather example-room example-car example-lock; do sips -s format png docs/$f.bmp --out docs/$f.png && rm docs/$f.bmp; done   # macOS
+for f in example example-weather example-month example-room example-car example-lock; do sips -s format png docs/$f.bmp --out docs/$f.png && rm docs/$f.bmp; done   # macOS
 ```
 
-<img src="docs/example-weather.png" width="400" alt="Weather sub-page"> <img src="docs/example-room.png" width="400" alt="Room sub-page">
+<img src="docs/example-weather.png" width="400" alt="Weather sub-page"> <img src="docs/example-month.png" width="400" alt="Month view"> <img src="docs/example-room.png" width="400" alt="Room sub-page">
 <img src="docs/example-car.png" width="400" alt="Tesla sub-page"> <img src="docs/example-lock.png" width="400" alt="Lock sub-page">
 
 ## Known limitations

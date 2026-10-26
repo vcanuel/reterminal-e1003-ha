@@ -43,7 +43,7 @@ display:
     lambda: |-
       if (ui::begin(it)) return;  // Wi-Fi setup screen or sub-page (lock)
 
-      ui::header(it, {48, 40, 1776, 100});
+      ui::header(it, {48, 40, 1776, 100}, "agenda");  // touching the date opens the month view
       it.filled_rectangle(48, 140, 1776, 4, ui::BLACK);
 
       id(weather)(it, {40, 160, 978, 620});

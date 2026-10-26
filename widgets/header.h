@@ -1,10 +1,11 @@
 // Header: today's date, last update time, power source (mains or battery %).
+// With `calendar` (id of a widgets/agenda.yaml), touching the date opens its month view.
 #pragma once
 #include "ui.h"
 
 namespace ui {
 
-inline void header(Display &it, Rect r) {
+inline void header(Display &it, Rect r, const char *calendar = nullptr) {
   const Strings &t = tr();
   auto now = ha_time->now();
   if (now.is_valid()) {
@@ -14,6 +15,7 @@ inline void header(Display &it, Rect r) {
         t.day_before_month ? day + " " + num + " " + month : day + ", " + month + " " + num);
     txt(it, r.x2() - 264, r.y + 22, f_small, GRAY, TextAlign::TOP_RIGHT, t.updated + now.strftime("%H:%M"));
   }
+  if (calendar) zone({(int16_t) (r.x - 20), (int16_t) (r.y - 20), 1000, (int16_t) (r.h + 20)}, [calendar] { show(calendar); });
   const bool mains = on_mains->value();
   const std::string power_txt = mains ? std::string(t.mains) : fmt(battery_level->state, 0) + " %";
   int bx, by, bw, bh;

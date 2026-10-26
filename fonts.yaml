@@ -28,3 +28,5 @@ font:
       - "\U000F11EC"  # plus-thick
       - "\U000F009A"  # bell
       - "\U000F009E"  # bell-ring
+      - "\U000F0141"  # chevron-left
+      - "\U000F0142"  # chevron-right

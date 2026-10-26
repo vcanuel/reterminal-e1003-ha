@@ -1,4 +1,5 @@
 # Calendar: next events (calendar.get_events action) from one or more calendars, sorted by date.
+# Touching it opens a month view (previous / next month), also from the header date: ui::header(it, r, "<id>").
 #   packages:
 #     agenda: !include
 #       file: widgets/agenda.yaml
@@ -19,12 +20,29 @@ globals:
   - id: ${id}_events
     type: std::string
     restore_value: no
+  # Month view: months from the current one, events of the displayed grid, waiting for them.
+  - id: ${id}_month
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: ${id}_month_events
+    type: std::string
+    restore_value: no
+  - id: ${id}_month_loading
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: ${id}_month_range   # "YYYY-MM-DD 00:00:00" of the first cell and of the day after the last one
+    type: std::vector<std::string>
+    restore_value: no
   - id: ${id}
     type: std::function<void(display::Display &, display::Rect)>
     restore_value: no
     initial_value: |-
       [](display::Display &it, display::Rect r) {
-        ui::agenda(it, r, "${title}", ${id}_events->value(), ${max_events});
+        const ui::Month month{"${id}", ${id}_month->value(), ${id}_month_events->value(),
+                              ${id}_month_loading->value(), [] { ${id}_month_fetch->execute(); }};
+        ui::agenda(it, r, "${title}", ${id}_events->value(), ${max_events}, &month);
       }
 
 script:
@@ -53,3 +71,57 @@ script:
             - logger.log:
                 format: "calendar.get_events: %s"
                 args: ["error.c_str()"]
+
+  # Month view: events of the displayed grid (all-day events end on the day after, timed ones on their last day).
+  - id: ${id}_month_fetch
+    mode: restart
+    then:
+      - lambda: id(${id}_month_range) = {ui::month_start(id(${id}_month)), ui::month_end(id(${id}_month))};
+      - homeassistant.action:
+          action: calendar.get_events
+          data:
+            entity_id: ${calendars}
+            start_date_time: !lambda return id(${id}_month_range)[0];
+            end_date_time: !lambda return id(${id}_month_range)[1];
+          capture_response: true
+          # One line per event: start|end (exclusive)|time (empty = all day)|title, dates as YYYY-MM-DD
+          response_template: |-
+            {%- set ns = namespace(ev=[]) -%}
+            {%- for k, v in response.items() -%}{%- set ns.ev = ns.ev + v.events -%}{%- endfor -%}
+            {%- for e in (ns.ev | sort(attribute='start'))[:250] -%}
+            {%- set allday = e.start | length == 10 -%}
+            {%- if allday -%}{%- set end = e.end[:10] -%}
+            {%- else -%}{%- set end = (strptime(e.end[:10], '%Y-%m-%d') + timedelta(days=0 if e.end[11:16] == '00:00' and e.end[:10] > e.start[:10] else 1)).strftime('%Y-%m-%d') -%}
+            {%- endif -%}
+            {{ e.start[:10] }}|{{ end }}|{{ '' if allday else e.start[11:16] }}|{{ e.summary | replace('|', '/') | replace('\n', ' ') | truncate(40, true, '...', 0) }}
+            {% endfor -%}
+          on_success:
+            - lambda: |-
+                auto v = response["response"];
+                id(${id}_month_events) = v.is<const char *>() ? std::string(v.as<const char *>()) : "";
+                id(${id}_month_loading) = false;
+            - if:
+                condition:
+                  lambda: return ui::is_open("${id}");
+                then:
+                  - component.update: epaper_display
+          on_error:
+            - lambda: |-
+                id(${id}_month_events) = "";
+                id(${id}_month_loading) = false;
+            - logger.log:
+                format: "calendar.get_events (month): %s"
+                args: ["error.c_str()"]
+            - if:
+                condition:
+                  lambda: return ui::is_open("${id}");
+                then:
+                  - component.update: epaper_display
+      # No answer from HA: show the grid anyway.
+      - delay: 8s
+      - if:
+          condition:
+            lambda: return id(${id}_month_loading) && ui::is_open("${id}");
+          then:
+            - lambda: id(${id}_month_loading) = false;
+            - component.update: epaper_display

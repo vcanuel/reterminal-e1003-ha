@@ -341,7 +341,8 @@ touchscreen:
           const bool dashboard = ui::on_dashboard();
           if (ui::touch(touch.x, touch.y)) {
             id(beep).execute();
-            id(epaper_display).update();
+            if (ui::held()) ui::held() = false;  // the widget redraws when its data arrives
+            else id(epaper_display).update();
           } else if (dashboard) {
             id(beep).execute();
             id(refresh).execute();

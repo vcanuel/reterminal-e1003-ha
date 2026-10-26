@@ -3,8 +3,8 @@
 #
 #   ESPHOME_SNAPSHOT_DIR=$PWD/docs .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml
 #
-# Writes example.bmp (dashboard) and the sub-pages example-weather.bmp, example-room.bmp, example-car.bmp and
-# example-lock.bmp, then exits.
+# Writes example.bmp (dashboard) and the sub-pages example-weather.bmp, example-month.bmp, example-room.bmp,
+# example-car.bmp and example-lock.bmp, then exits.
 # The demo data below targets the ids of example.yaml.
 
 packages:
@@ -102,6 +102,24 @@ esphome:
             id(car_scheduled).publish_state("2026-10-25T21:00:00+00:00");
             id(car_version).publish_state("2026.38.3.1");
             id(car_update_version).publish_state("2026.38.3.2");
+
+            // Month view: events around today (start|end exclusive|time|title).
+            auto day = [](int delta) {
+              time_t t = ::time(nullptr) + delta * 86400;
+              struct tm d;
+              localtime_r(&t, &d);
+              return ui::ymd(d);
+            };
+            const struct { int from, to; const char *time, *title; } month[] = {
+              {-2, 7, "", "School holidays"}, {0, 1, "18:30", "Swimming pool"}, {1, 2, "08:15", "Dentist"},
+              {1, 2, "", "Bob's birthday"}, {2, 3, "17:30", "Zumba"}, {3, 4, "09:00", "Parent-teacher meeting"},
+              {5, 6, "20:00", "Dinner at Alice's"}, {-6, -5, "19:00", "Book club"}, {-9, -8, "10:00", "Hairdresser"},
+              {9, 10, "", "Recycling"}, {12, 13, "14:00", "Football match"}, {12, 13, "18:00", "Cinema"},
+              {12, 13, "20:30", "Concert"}, {12, 13, "22:00", "Late show"}, {15, 16, "12:30", "Lunch with Sam"},
+            };
+            std::string ev;
+            for (auto &e : month) ev += day(e.from) + "|" + day(e.to) + "|" + e.time + "|" + e.title + "\n";
+            id(agenda_month_events) = ev;
             id(alice_state).publish_state("home");
             id(bob_state).publish_state("Work");
         - component.update: epaper_display
@@ -114,6 +132,19 @@ esphome:
         - snapshot.take:
             id: epaper_display
             filename: example-weather.bmp
+        # Back to the dashboard, then touching the header date opens the month view (demo events above).
+        - lambda: ui::close();
+        - component.update: epaper_display
+        - lambda: |-
+            ui::touch(300, 80);
+            ui::held() = false;
+            id(agenda_month_loading) = false;
+        - component.update: epaper_display
+        - snapshot.take:
+            id: epaper_display
+            filename: example-month.bmp
+        - lambda: ui::close();
+        - component.update: epaper_display
         # Back to the dashboard, then touching the first room opens its sub-page.
         - lambda: ui::close();
         - component.update: epaper_display

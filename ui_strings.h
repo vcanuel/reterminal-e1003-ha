@@ -44,6 +44,8 @@ struct Strings {
   // Doorbell (Nuki Opener) and lock panel title
   const char *lock_title, *rto_on, *rto_off, *rto, *last_ring, *ask_rto, *rto_warning, *ask_buzz,
       *rang_at, *doorbell_unavailable;
+  // Month view
+  const char *loading;
 };
 
 static const Strings EN = {
@@ -165,6 +167,7 @@ static const Strings EN = {
     "Buzz the door open?",
     "Rang at ",
     "Doorbell unavailable",
+    "Loading...",
 };
 
 static const Strings FR = {
@@ -286,6 +289,7 @@ static const Strings FR = {
     "Déclencher l'ouverture ?",
     "A sonné à ",
     "Sonnette indisponible",
+    "Chargement...",
 };
 
 // Texts for the configured language (English by default).
