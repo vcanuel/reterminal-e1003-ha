@@ -41,6 +41,9 @@ struct Strings {
       *frunk, *sentry, *on, *off, *car_state, *asleep, *online, *offline, *driving, *updating, *suspended,
       *climate, *inside, *outside, *ac, *ac_on, *preconditioning, *tyres, *front_left, *front_right, *rear_left,
       *rear_right, *other, *odometer, *software, *update, *available;
+  // Doorbell (Nuki Opener) and lock panel title
+  const char *lock_title, *rto_on, *rto_off, *rto, *last_ring, *ask_rto, *rto_warning, *ask_buzz,
+      *rang_at, *doorbell_unavailable;
 };
 
 static const Strings EN = {
@@ -152,6 +155,16 @@ static const Strings EN = {
     "Software",
     "Update",
     " available",
+    "Lock",
+    "Ring to Open on",
+    "Ring to Open off",
+    "Ring to Open",
+    "Last ring: ",
+    "Enable Ring to Open?",
+    "The next ring will open the door.",
+    "Buzz the door open?",
+    "Rang at ",
+    "Doorbell unavailable",
 };
 
 static const Strings FR = {
@@ -263,6 +276,16 @@ static const Strings FR = {
     "Logiciel",
     "Mise à jour",
     " disponible",
+    "Serrure",
+    "Ring to Open activé",
+    "Ring to Open désactivé",
+    "Ring to Open",
+    "Dernier coup de sonnette : ",
+    "Activer Ring to Open ?",
+    "Le prochain coup de sonnette ouvrira la porte.",
+    "Déclencher l'ouverture ?",
+    "A sonné à ",
+    "Sonnette indisponible",
 };
 
 // Texts for the configured language (English by default).

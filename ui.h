@@ -2,6 +2,7 @@
 // Widgets (widgets/*.h) draw inside a rectangle and declare their touch zones while drawing,
 // so the zones always match what is on screen.
 #pragma once
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <functional>
@@ -94,6 +95,29 @@ inline void close() { page() = {}; }
 inline bool is_open(const std::string &key) { return page().key == key; }
 inline bool on_dashboard() { return page().key.empty(); }
 
+// Opening a sub-page from elsewhere than its tile (e.g. a doorbell ring): the tile registers how to open it
+// while drawing; show() opens it, false when no tile with that key has been drawn yet.
+inline std::vector<std::pair<std::string, std::function<void()>>> &openers() {
+  static std::vector<std::pair<std::string, std::function<void()>>> o;
+  return o;
+}
+inline void can_open(const std::string &key, std::function<void()> fn) {
+  for (auto &o : openers())
+    if (o.first == key) {
+      o.second = std::move(fn);
+      return;
+    }
+  openers().push_back({key, std::move(fn)});
+}
+inline bool show(const std::string &key) {
+  for (auto &o : openers())
+    if (o.first == key) {
+      o.second();
+      return true;
+    }
+  return false;
+}
+
 inline void button(Display &it, Rect r, const char *label, bool primary, std::function<void()> fn) {
   if (primary) {
     it.filled_rectangle(r.x, r.y, r.w, r.h, BLACK);
@@ -103,6 +127,62 @@ inline void button(Display &it, Rect r, const char *label, bool primary, std::fu
     txt(it, r.x + r.w / 2, r.y + r.h / 2, f_h1, BLACK, TextAlign::CENTER, label);
   }
   zone(r, std::move(fn));
+}
+
+// Largest of the fonts (biggest first) that fits s in width w.
+inline font::Font *fit(Display &it, const std::string &s, int w, std::initializer_list<font::Font *> fonts) {
+  font::Font *last = nullptr;
+  for (auto *f : fonts) {
+    int x1, y1, tw, th;
+    it.get_text_bounds(0, 0, s.c_str(), f, TextAlign::TOP_LEFT, &x1, &y1, &tw, &th);
+    last = f;
+    if (tw <= w) break;
+  }
+  return last;
+}
+
+// Confirmation inside r: question, optional warning, Cancel / Confirm.
+inline void confirm(Display &it, Rect r, const char *question, const char *warning, std::function<void()> cancel,
+                    std::function<void()> ok) {
+  const Strings &t = tr();
+  const int cx = r.x + r.w / 2, bw = std::min(640, (r.w - 40) / 2);
+  txt(it, cx, r.y + 290, fit(it, question, r.w, {f_h1, f_h2}), BLACK, TextAlign::TOP_CENTER, question);
+  if (warning) txt(it, cx, r.y + 400, fit(it, warning, r.w, {f_txt, f_small}), GRAY, TextAlign::TOP_CENTER, warning);
+  button(it, {(int16_t) (cx - 20 - bw), (int16_t) (r.y + 710), (int16_t) bw, 240}, t.cancel, false, std::move(cancel));
+  button(it, {(int16_t) (cx + 20), (int16_t) (r.y + 710), (int16_t) bw, 240}, t.confirm, true, std::move(ok));
+}
+
+// Panels attached to a widget's sub-page, drawn next to it (e.g. a doorbell next to the front door lock).
+inline std::vector<std::pair<std::string, Draw>> &attached() {
+  static std::vector<std::pair<std::string, Draw>> a;
+  return a;
+}
+inline void attach(const std::string &key, Draw panel) { attached().push_back({key, std::move(panel)}); }
+inline std::vector<Draw> panels(const std::string &key) {
+  std::vector<Draw> out;
+  for (auto &a : attached())
+    if (a.first == key) out.push_back(a.second);
+  return out;
+}
+
+// Badge shown on another widget's tile: icon in the top-right corner, text instead of its subtitle
+// (e.g. the doorbell's Ring to Open on the front door tile). Empty text = nothing to show.
+struct Badge {
+  const char *icon;
+  std::string text;
+};
+inline std::vector<std::pair<std::string, std::function<Badge()>>> &badges() {
+  static std::vector<std::pair<std::string, std::function<Badge()>>> b;
+  return b;
+}
+inline void attach_badge(const std::string &key, std::function<Badge()> fn) { badges().push_back({key, std::move(fn)}); }
+inline Badge badge(const std::string &key) {
+  for (auto &b : badges())
+    if (b.first == key) {
+      Badge v = b.second();
+      if (!v.text.empty()) return v;
+    }
+  return {nullptr, ""};
 }
 
 // Sub-page header: Back button, title, rule.

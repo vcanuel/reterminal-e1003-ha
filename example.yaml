@@ -28,6 +28,10 @@ packages:
   office: !include { file: widgets/room.yaml, vars: { id: office, entity: climate.office, name: Office } }
   power_meter: !include { file: widgets/power.yaml, vars: { id: power_meter, entity: sensor.power_consumption } }
   front_door: !include { file: widgets/lock.yaml, vars: { id: front_door, entity: lock.front_door, name: Front door } }
+  # Doorbell (Nuki Opener), shown on the front door sub-page.
+  doorbell: !include
+    file: widgets/opener.yaml
+    vars: { id: doorbell, entity: lock.doorbell, ring: binary_sensor.doorbell_ring_action, page: front_door }
   # Tesla through TeslaMate (sensor.my_tesla_*); for another car: widgets/car.yaml (tile only).
   car: !include { file: widgets/tesla.yaml, vars: { id: car, car: my_tesla, name: Tesla } }
   alice: !include { file: widgets/person.yaml, vars: { id: alice, entity: person.alice, name: Alice } }

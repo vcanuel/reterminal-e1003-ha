@@ -26,3 +26,5 @@ font:
       - "\U000F0079"  # battery
       - "\U000F1639"  # minus-thick
       - "\U000F11EC"  # plus-thick
+      - "\U000F009A"  # bell
+      - "\U000F009E"  # bell-ring

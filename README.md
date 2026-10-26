@@ -14,7 +14,8 @@ in **plain ESPHome**: nothing to set up in Home Assistant besides allowing actio
 - Rooms (climate.*), power, lock, electric car, presence through `homeassistant` sensors.
 - Touch: weather sub-page (details, next 12 hours, next 7 days), room sub-page (target −/+, hvac mode), Tesla sub-page
   (TeslaMate: charge, vehicle, climate, tyres, software), lock sub-page (lock / unlock / open, with
-  confirmation), feedback beep, back to the dashboard after 2 min.
+  confirmation; doorbell next to it: Ring to Open, buzz, last ring; shown by itself when someone rings, on mains;
+  bell on the front door tile while Ring to Open is on), feedback beep, back to the dashboard after 2 min.
   Touching anywhere else refreshes the screen.
 - Power: mains/battery detection through the **SY6974B** charger (I2C 0x6B, REG08 bit 2), with a voltage-jump
   fallback. On mains: refresh every 5 min + touch. On battery: one refresh, then 30 min deep sleep
@@ -41,6 +42,7 @@ simulator.yaml       replaces hardware.yaml on a computer to render the screensh
 | Room (climate.*) + sub-page | `widgets/room.yaml` (`id`, `entity`, `name`, `modes`, `step`), one per room | `ui::rooms(it, r, "Rooms", {id(living_room), ...})` |
 | Power | `widgets/power.yaml` (`id`, `entity`, `title`, `subtitle`) | `id(power_meter)(it, {x, y, 370, 220})` |
 | Lock + sub-page | `widgets/lock.yaml` (`id`, `entity`, `name`, `subtitle`) | `id(front_door)(it, {x, y, 370, 220})` |
+| Doorbell (Nuki Opener): panel on the lock sub-page (`page`) or own tile | `widgets/opener.yaml` (`id`, `entity`, `ring`, `name`, `page`) | `id(doorbell)(it, {x, y, 370, 220})` (optional) |
 | Electric car | `widgets/car.yaml` (`id`, `name`, `battery`, `range`, `charger_power`, `plugged`) | `id(car)(it, {x, y, 370, 220})` |
 | Tesla (TeslaMate) + sub-page | `widgets/tesla.yaml` (`id`, `car`: entity prefix, `name`) | `id(car)(it, {x, y, 370, 220})` |
 | Presence (person.*) | `widgets/person.yaml` (`id`, `entity`, `name`), one per person | `ui::presence(it, r, "Presence", {id(alice), ...})` |

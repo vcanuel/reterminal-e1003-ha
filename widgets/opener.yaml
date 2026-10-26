@@ -1,0 +1,118 @@
+# Doorbell with a Nuki Opener (lock.* entity, Nuki integration): Ring to Open on / off, buzz the door open
+# (with confirmation), last ring (binary_sensor `ring`, e.g. binary_sensor.<opener>_ring_action).
+# When someone rings (on mains), the screen shows the page with the doorbell.
+# Either attached to another widget's sub-page with `page` (e.g. the front door lock: both on one page),
+# or as its own tile:
+#   packages:
+#     doorbell: !include
+#       file: widgets/opener.yaml
+#       vars: { id: doorbell, entity: lock.doorbell, ring: binary_sensor.doorbell_ring_action, page: front_door }
+# Own tile (optional): id(doorbell)(it, {x, y, 370, 220});
+defaults:
+  name: Doorbell
+  subtitle: Ring to Open
+  page: ""   # id of the widget whose sub-page shows this panel (e.g. a widgets/lock.yaml id)
+
+esphome:
+  includes:
+    - opener.h
+  on_boot:
+    - priority: 600
+      then:
+        - lambda: |-
+            if (std::string("${page}") != "") {
+              ui::attach("${page}", id(${id}_panel));
+              ui::attach_badge("${page}", [] { return ui::opener_badge(id(${id}_state), id(${id}_last_ring)); });
+            }
+
+globals:
+  - id: ${id}_last_ring
+    type: uint32_t
+    restore_value: yes
+    initial_value: '0'
+  - id: ${id}_step
+    type: int
+    restore_value: no
+    initial_value: '1'
+  - id: ${id}_pending
+    type: int
+    restore_value: no
+    initial_value: '0'
+  - id: ${id}_msg
+    type: std::string
+    restore_value: no
+  - id: ${id}_panel
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) {
+        ui::opener_panel(it, r, {"${name}", ${id}_state, ${id}_last_ring->value(), ${id}_step->value(),
+                                 ${id}_pending->value(), ${id}_msg->value(),
+                                 [](const std::string &a) { ${id}_cmd->execute(a); }, ${id}_icon, ${id}_big});
+      }
+  - id: ${id}
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) {
+        ui::opener_tile(it, r, "${id}", "${name}", "${subtitle}", ${id}_state, ${id}_panel->value());
+      }
+
+text_sensor:
+  - platform: homeassistant
+    id: ${id}_state
+    entity_id: ${entity}
+    on_value:
+      - lambda: id(${id}_msg) = "";
+      - script.execute: ${id}_redraw
+
+binary_sensor:
+  - platform: homeassistant
+    id: ${id}_ring
+    entity_id: ${ring}
+    on_press:
+      - lambda: |-
+          id(${id}_last_ring) = ::time(nullptr);
+          id(${id}_step) = 1;
+          // On mains, show the page with the doorbell (back to the dashboard 2 min later, see hardware.yaml).
+          if (id(on_mains) && ui::show(std::string("${page}") != "" ? "${page}" : "${id}")) {
+            id(last_touch) = millis();
+            id(epaper_display).update();
+          } else {
+            id(${id}_redraw).execute();
+          }
+
+script:
+  # Redraws the sub-page showing this panel, if open (or the dashboard, for the badge).
+  - id: ${id}_redraw
+    mode: restart
+    then:
+      - delay: 2s   # the lock's state often arrives with it (e.g. Nuki bridge back from unavailable)
+      - if:
+          condition:
+            # also the dashboard when attached: the badge on the tile changes
+            lambda: return ui::is_open("${id}") || (std::string("${page}") != "" && (ui::is_open("${page}") || ui::on_dashboard()));
+          then:
+            - component.update: epaper_display
+  - id: ${id}_cmd
+    parameters:
+      svc: string
+    then:
+      - homeassistant.action:
+          action: !lambda return svc;
+          data:
+            entity_id: ${entity}
+          on_error:
+            - lambda: 'id(${id}_msg) = std::string(ui::tr().error) + error;'
+            - script.execute: ${id}_redraw
+
+font:
+  # Same sizes as widgets/lock.yaml.
+  - { file: "gfonts://Inter@700", id: "${id}_big", size: 110, bpp: 2, glyphs: " -ORacdefginopstvé" }
+  - file: { type: web, url: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/v7.4.47/fonts/materialdesignicons-webfont.ttf" }
+    id: ${id}_icon
+    size: 280
+    bpp: 2
+    glyphs:
+      - "\U000F009A"  # bell
+      - "\U000F009E"  # bell-ring

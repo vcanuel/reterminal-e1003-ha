@@ -74,6 +74,8 @@ esphome:
 
             id(power_meter_power).publish_state(389);
             id(front_door_state).publish_state("locked");
+            id(doorbell_state).publish_state("unlocked");  // Ring to Open on: bell on the front door tile
+            id(doorbell_last_ring) = ::time(nullptr) - 3 * 3600;
             id(car_battery).publish_state(69);
             id(car_range).publish_state(263);
             id(car_charger_power).publish_state(0);
@@ -128,7 +130,7 @@ esphome:
         - snapshot.take:
             id: epaper_display
             filename: example-car.bmp
-        # Back to the dashboard, then touching the lock tile opens its sub-page.
+        # Back to the dashboard, then touching the lock tile opens its sub-page (with the doorbell).
         - lambda: ui::close();
         - component.update: epaper_display
         - lambda: ui::touch(1500, 1000);
@@ -158,6 +160,10 @@ globals:
     type: bool
     restore_value: no
     initial_value: 'true'
+  - id: last_touch
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
 
 sensor:
   - platform: template
