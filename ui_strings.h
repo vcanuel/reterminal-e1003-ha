@@ -28,6 +28,10 @@ struct Strings {
   const char *back, *do_lock, *do_unlock, *do_open, *open_hint;
   const char *ask_lock, *ask_unlock, *ask_open, *open_warning;
   const char *cancel, *confirm, *sent, *error;
+  // Weather sub-page
+  const char *weather_title, *feels_like, *dew_point, *gusts, *pressure, *uv_index, *clouds, *visibility;
+  const char *next_hours, *next_days;
+  const char *compass[8];  // N, NE, E... (wind bearing)
 };
 
 static const Strings EN = {
@@ -74,6 +78,17 @@ static const Strings EN = {
     "Confirm",
     "Command sent...",
     "Error: ",
+    "Weather",
+    "Feels like",
+    "Dew point",
+    "Gusts",
+    "Pressure",
+    "UV index",
+    "Cloud cover",
+    "Visibility",
+    "Next hours",
+    "Next days",
+    {"N", "NE", "E", "SE", "S", "SW", "W", "NW"},
 };
 
 static const Strings FR = {
@@ -120,6 +135,17 @@ static const Strings FR = {
     "Confirmer",
     "Commande envoyée...",
     "Erreur : ",
+    "Météo",
+    "Ressenti",
+    "Point de rosée",
+    "Rafales",
+    "Pression",
+    "Indice UV",
+    "Nuages",
+    "Visibilité",
+    "Prochaines heures",
+    "Prochains jours",
+    {"N", "NE", "E", "SE", "S", "SO", "O", "NO"},
 };
 
 // Texts for the configured language (English by default).

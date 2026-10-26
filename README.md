@@ -12,7 +12,8 @@ in **plain ESPHome**: nothing to set up in Home Assistant besides allowing actio
 - Weather (current + 5 days) and calendar fetched with the HA actions `weather.get_forecasts` /
   `calendar.get_events` and `response_template`: no template sensor to create in HA.
 - Rooms (climate.*), power, lock, electric car, presence through `homeassistant` sensors.
-- Touch: lock sub-page (lock / unlock / open, with confirmation), feedback beep, back to the dashboard after 2 min.
+- Touch: weather sub-page (details, next 12 hours, next 7 days), lock sub-page (lock / unlock / open, with
+  confirmation), feedback beep, back to the dashboard after 2 min.
   Touching anywhere else refreshes the screen.
 - Power: mains/battery detection through the **SY6974B** charger (I2C 0x6B, REG08 bit 2), with a voltage-jump
   fallback. On mains: refresh every 5 min + touch. On battery: one refresh, then 30 min deep sleep
@@ -34,7 +35,7 @@ simulator.yaml       replaces hardware.yaml on a computer to render the screensh
 | Widget | Package (vars) | Drawing |
 |---|---|---|
 | Header (date, last update, power) | `widgets/header.yaml` | `ui::header(it, {x, y, w, h})` |
-| Weather, current + 5 days | `widgets/weather.yaml` (`id`, `entity`) | `id(weather)(it, {x, y, 980, 620})` |
+| Weather, current + 5 days + sub-page | `widgets/weather.yaml` (`id`, `entity`) | `id(weather)(it, {x, y, 980, 620})` |
 | Calendar | `widgets/agenda.yaml` (`id`, `calendars`, `title`, `duration`, `max_events`, `max_chars`) | `id(agenda)(it, {x, y, w, h})` |
 | Room (climate.*) | `widgets/room.yaml` (`id`, `entity`, `name`), one per room | `ui::rooms(it, r, "Rooms", {id(living_room), ...})` |
 | Power | `widgets/power.yaml` (`id`, `entity`, `title`, `subtitle`) | `id(power_meter)(it, {x, y, 370, 220})` |
@@ -81,15 +82,15 @@ mkdir -p private && cp example.yaml private/my-screen.yaml    # private/ is igno
 ## Screenshots (simulator)
 
 `simulator.yaml` replaces `hardware.yaml` with ESPHome's `host` platform and an in-memory display: it draws
-`example.yaml` with demo data, saves the dashboard and the lock sub-page, then exits. No screen or Home Assistant
+`example.yaml` with demo data, saves the dashboard and the weather and lock sub-pages, then exits. No screen or Home Assistant
 needed.
 
 ```bash
 ESPHOME_SNAPSHOT_DIR=$PWD/docs .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml --no-logs
-for f in example example-lock; do sips -s format png docs/$f.bmp --out docs/$f.png && rm docs/$f.bmp; done   # macOS
+for f in example example-weather example-lock; do sips -s format png docs/$f.bmp --out docs/$f.png && rm docs/$f.bmp; done   # macOS
 ```
 
-<img src="docs/example-lock.png" width="400" alt="Lock sub-page">
+<img src="docs/example-weather.png" width="400" alt="Weather sub-page"> <img src="docs/example-lock.png" width="400" alt="Lock sub-page">
 
 ## Known limitations
 

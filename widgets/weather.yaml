@@ -1,4 +1,6 @@
 # Weather from a weather.* entity: current conditions + 5-day forecast (weather.get_forecasts action).
+# Touching it opens a sub-page: current details, next 12 hours (hourly forecast, when the integration has one),
+# next 7 days.
 #   packages:
 #     weather: !include { file: widgets/weather.yaml, vars: { id: weather, entity: weather.home } }
 # Draw: id(weather)(it, {x, y, 980, 620});
@@ -13,13 +15,19 @@ globals:
   - id: ${id}_forecast
     type: std::string
     restore_value: no
+  - id: ${id}_details
+    type: std::string
+    restore_value: no
+  - id: ${id}_hourly
+    type: std::string
+    restore_value: no
   - id: ${id}
     type: std::function<void(display::Display &, display::Rect)>
     restore_value: no
     initial_value: |-
       [](display::Display &it, display::Rect r) {
-        ui::weather(it, r, {${id}_state, ${id}_temp, ${id}_hum, ${id}_wind, ${id}_forecast->value(),
-                              ${id}_icon_xl, ${id}_icon_m, ${id}_temp_xl});
+        ui::weather(it, r, {"${id}", ${id}_state, ${id}_temp, ${id}_hum, ${id}_wind, ${id}_forecast->value(),
+                            ${id}_details->value(), ${id}_hourly->value(), ${id}_icon_xl, ${id}_icon_m, ${id}_temp_xl});
       }
 
 sensor:
@@ -50,18 +58,52 @@ script:
             entity_id: ${entity}
             type: daily
           capture_response: true
-          # One line per day: condition|max|min|precipitation|weekday (0 = Monday)
+          # First line: current details (see Weather::details in weather.h), formatted with their unit.
+          # Then one line per day: condition|max|min|precipitation|weekday (0 = Monday)|precipitation probability|wind
           response_template: |-
-            {%- for f in response['${entity}'].forecast[:5] -%}
-            {{ f.condition }}|{{ f.temperature | round(0) | int }}|{{ (f.templow | default(f.temperature)) | round(0) | int }}|{{ f.precipitation | default(0) }}|{{ as_local(as_datetime(f.datetime)).weekday() }}
+            {%- set e = '${entity}' -%}
+            {%- set wu = ' ' ~ (state_attr(e, 'wind_speed_unit') or 'km/h') -%}
+            {%- for a, u in [('apparent_temperature', '°'), ('dew_point', '°'),
+                             ('pressure', ' ' ~ (state_attr(e, 'pressure_unit') or 'hPa')), ('wind_speed', wu),
+                             ('wind_bearing', ''), ('wind_gust_speed', wu), ('uv_index', ''), ('cloud_coverage', ' %'),
+                             ('visibility', ' ' ~ (state_attr(e, 'visibility_unit') or 'km'))] -%}
+            {%- set x = state_attr(e, a) -%}
+            {{ (x | round(0) | int) ~ u if x is number else '' }}{{ '|' if not loop.last else '\n' }}
+            {%- endfor -%}
+            {%- for f in response[e].forecast[:7] -%}
+            {{ f.condition }}|{{ f.temperature | round(0) | int }}|{{ (f.templow | default(f.temperature)) | round(0) | int }}|{{ f.precipitation | default(0) }}|{{ as_local(as_datetime(f.datetime)).weekday() }}|{{ f.precipitation_probability | round(0) | int if f.precipitation_probability is number else '' }}|{{ (f.wind_speed | round(0) | int) ~ wu if f.wind_speed is number else '' }}
             {% endfor -%}
           on_success:
             - lambda: |-
                 auto v = response["response"];
-                id(${id}_forecast) = v.is<const char *>() ? std::string(v.as<const char *>()) : "";
+                const std::string s = v.is<const char *>() ? v.as<const char *>() : "";
+                const size_t nl = s.find('\n');
+                id(${id}_details) = s.substr(0, nl);
+                id(${id}_forecast) = nl == std::string::npos ? "" : s.substr(nl + 1);
           on_error:
             - logger.log:
-                format: "weather.get_forecasts: %s"
+                format: "weather.get_forecasts (daily): %s"
+                args: ["error.c_str()"]
+      # Next 12 hours, for the sub-page (not every integration provides an hourly forecast).
+      - homeassistant.action:
+          action: weather.get_forecasts
+          data:
+            entity_id: ${entity}
+            type: hourly
+          capture_response: true
+          # One line per hour: condition|temperature|precipitation probability|precipitation|hour
+          response_template: |-
+            {%- for f in response['${entity}'].forecast[:12] -%}
+            {{ f.condition }}|{{ f.temperature | round(0) | int }}|{{ f.precipitation_probability | round(0) | int if f.precipitation_probability is number else '' }}|{{ f.precipitation | default(0) }}|{{ as_local(as_datetime(f.datetime)).hour }}
+            {% endfor -%}
+          on_success:
+            - lambda: |-
+                auto v = response["response"];
+                id(${id}_hourly) = v.is<const char *>() ? std::string(v.as<const char *>()) : "";
+          on_error:
+            - lambda: id(${id}_hourly) = "";
+            - logger.log:
+                format: "weather.get_forecasts (hourly): %s"
                 args: ["error.c_str()"]
 
 font:

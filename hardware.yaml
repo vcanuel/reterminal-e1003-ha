@@ -154,6 +154,21 @@ sensor:
           min_value: 0
           max_value: 100
 
+  - platform: wifi_signal
+    name: "Wi-Fi signal"
+    update_interval: 60s
+    entity_category: diagnostic
+
+# Shown on the device page in HA (diagnostic).
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "IP address"
+      entity_category: diagnostic
+    ssid:
+      name: "Wi-Fi network"
+      entity_category: diagnostic
+
 binary_sensor:
   - platform: template
     id: mains_sensor

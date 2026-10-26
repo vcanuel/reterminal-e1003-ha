@@ -3,7 +3,7 @@
 #
 #   ESPHOME_SNAPSHOT_DIR=$PWD/docs .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml
 #
-# Writes example.bmp (dashboard) and example-lock.bmp (lock sub-page), then exits.
+# Writes example.bmp (dashboard), example-weather.bmp and example-lock.bmp (sub-pages), then exits.
 # The demo data below targets the ids of example.yaml.
 
 packages:
@@ -26,11 +26,27 @@ esphome:
             id(weather_hum).publish_state(60);
             id(weather_wind).publish_state(21);
             id(weather_forecast) =
-                "partlycloudy|11|6|0|6\n"
-                "cloudy|13|8|0.2|0\n"
-                "rainy|12|9|3.5|1\n"
-                "sunny|14|7|0|2\n"
-                "sunny|15|6|0|3\n";
+                "partlycloudy|11|6|0|6|10|19 km/h\n"
+                "cloudy|13|8|0.2|0|30|15 km/h\n"
+                "rainy|12|9|3.5|1|80|32 km/h\n"
+                "sunny|14|7|0|2|0|12 km/h\n"
+                "sunny|15|6|0|3|0|9 km/h\n"
+                "partlycloudy|14|8|0|4|20|14 km/h\n"
+                "rainy|11|7|6.1|5|90|38 km/h\n";
+            id(weather_details) = "8°|3°|1016 hPa|21 km/h|312|43 km/h|2|75 %|10 km";
+            id(weather_hourly) =
+                "partlycloudy|10|10|0|14\n"
+                "partlycloudy|11|10|0|15\n"
+                "cloudy|11|20|0|16\n"
+                "cloudy|10|30|0|17\n"
+                "rainy|9|60|0.4|18\n"
+                "rainy|9|70|1.2|19\n"
+                "rainy|8|40|0.3|20\n"
+                "cloudy|8|20|0|21\n"
+                "clear-night|7|0|0|22\n"
+                "clear-night|7|0|0|23\n"
+                "clear-night|6|0|0|0\n"
+                "fog|6|0|0|1\n";
 
             // days_from_today|weekday|day_of_month|time|title
             id(agenda_events) =
@@ -66,7 +82,15 @@ esphome:
         - snapshot.take:
             id: epaper_display
             filename: example.bmp
-        # Touching the lock tile opens its sub-page.
+        # Touching the weather opens its sub-page.
+        - lambda: ui::touch(300, 400);
+        - component.update: epaper_display
+        - snapshot.take:
+            id: epaper_display
+            filename: example-weather.bmp
+        # Back to the dashboard, then touching the lock tile opens its sub-page.
+        - lambda: ui::close();
+        - component.update: epaper_display
         - lambda: ui::touch(1500, 1000);
         - component.update: epaper_display
         - snapshot.take:
