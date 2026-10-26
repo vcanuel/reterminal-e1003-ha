@@ -4,7 +4,7 @@
 #   ESPHOME_SNAPSHOT_DIR=$PWD/docs .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml
 #
 # Writes example.bmp (dashboard) and the sub-pages example-weather.bmp, example-month.bmp, example-room.bmp,
-# example-car.bmp and example-lock.bmp, then exits.
+# example-power.bmp, example-car.bmp and example-lock.bmp, then exits.
 # The demo data below targets the ids of example.yaml.
 
 packages:
@@ -73,6 +73,20 @@ esphome:
             }
 
             id(power_meter_power).publish_state(389);
+            id(power_meter_average).publish_state(1240);
+            id(power_meter_peak).publish_state(3807);
+            id(power_meter_tariff).publish_state("2");
+            {
+              const float kwh[24] = {0.26, 0.26, 0.34, 0.6, 0.89, 0.39, 1.44, 0.4, 0.34, 0.73, 0.24, 0.77,
+                                     0.21, 0.2, 0.17, 0.2, 0.2, 0.26, 0.31, 0.53, 0.29, 0.26, 0.26, 0.38};
+              const int now_h = (::time(nullptr) / 3600 + 1) % 24;  // demo: hours in UTC+1
+              std::string h;
+              for (int i = 0; i < 24; i++) h += std::to_string((now_h + i) % 24) + ":" + ui::fmt(kwh[i], 2) + (i < 23 ? "," : "");
+              id(power_meter_hours) = h;
+            }
+            id(power_meter_days) =
+                "1|9.4|1.6\n2|7.8|2.1\n3|7.5|2.8\n4|8.5|2.6\n5|0|8.4\n6|0|7.5\n0|2.5|1.5\n"
+                "1|2.5|1.5\n2|8.1|2\n3|11.9|2.1\n4|12.5|2.3\n5|0|9\n6|0|13.8\n0|2.5|2\n";
             id(front_door_state).publish_state("locked");
             id(doorbell_state).publish_state("unlocked");  // Ring to Open on: bell on the front door tile
             id(doorbell_last_ring) = ::time(nullptr) - 3 * 3600;
@@ -151,6 +165,14 @@ esphome:
         - snapshot.take:
             id: epaper_display
             filename: example-room.bmp
+        # Back to the dashboard, then touching the electricity tile opens its sub-page.
+        - lambda: ui::close();
+        - component.update: epaper_display
+        - lambda: ui::touch(1150, 1000);
+        - component.update: epaper_display
+        - snapshot.take:
+            id: epaper_display
+            filename: example-power.bmp
         # Back to the dashboard, then touching the car tile opens its sub-page.
         - lambda: ui::close();
         - component.update: epaper_display

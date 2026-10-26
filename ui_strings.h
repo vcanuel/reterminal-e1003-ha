@@ -46,6 +46,9 @@ struct Strings {
       *rang_at, *doorbell_unavailable;
   // Month view
   const char *loading;
+  // Electricity sub-page (HomeWizard P1)
+  const char *rate_day, *rate_night, *capacity, *quarter, *month_peak, *last_24h, *last_14d, *day, *night,
+      *today_long, *yesterday, *average, *per_day;
 };
 
 static const Strings EN = {
@@ -168,6 +171,19 @@ static const Strings EN = {
     "Rang at ",
     "Doorbell unavailable",
     "Loading...",
+    "Day rate",
+    "Night rate",
+    "Capacity tariff",
+    "Current quarter-hour",
+    "Peak this month",
+    "Last 24 hours",
+    "Last 14 days",
+    "Day",
+    "Night",
+    "Today",
+    "Yesterday",
+    "Average",
+    "/day",
 };
 
 static const Strings FR = {
@@ -290,6 +306,19 @@ static const Strings FR = {
     "A sonné à ",
     "Sonnette indisponible",
     "Chargement...",
+    "Tarif jour",
+    "Tarif nuit",
+    "Tarif capacitaire",
+    "Quart d'heure en cours",
+    "Pic du mois",
+    "Dernières 24 heures",
+    "14 derniers jours",
+    "Jour",
+    "Nuit",
+    "Aujourd'hui",
+    "Hier",
+    "Moyenne",
+    "/jour",
 };
 
 // Texts for the configured language (English by default).

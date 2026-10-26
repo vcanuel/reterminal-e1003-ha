@@ -60,6 +60,12 @@ inline void tile(Display &it, Rect r, const char *icon, const char *label, const
   if (!sub.empty()) txt(it, r.x, r.y + 150, f_small, GRAY, TextAlign::TOP_LEFT, sub);
 }
 
+// Label (gray) on the left, value (bold) on the right of a w-wide row.
+inline void kv(Display &it, int x, int y, int w, const char *label, const std::string &value) {
+  txt(it, x, y, f_txt, GRAY, TextAlign::TOP_LEFT, label);
+  txt(it, x + w, y, f_txt_b, BLACK, TextAlign::TOP_RIGHT, value);
+}
+
 // ---------- Touch zones ----------
 struct Zone {
   Rect r;

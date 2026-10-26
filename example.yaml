@@ -26,7 +26,8 @@ packages:
     vars: { id: living_room, entity: climate.living_room, name: Living room, modes: "auto,heat,off" }
   bedroom: !include { file: widgets/room.yaml, vars: { id: bedroom, entity: climate.bedroom, name: Bedroom } }
   office: !include { file: widgets/room.yaml, vars: { id: office, entity: climate.office, name: Office } }
-  power_meter: !include { file: widgets/power.yaml, vars: { id: power_meter, entity: sensor.power_consumption } }
+  # HomeWizard P1 meter (sensor.hw_p1meter_abcdef_*); for another meter: widgets/power.yaml (tile only).
+  power_meter: !include { file: widgets/p1meter.yaml, vars: { id: power_meter, meter: hw_p1meter_abcdef } }
   front_door: !include { file: widgets/lock.yaml, vars: { id: front_door, entity: lock.front_door, name: Front door } }
   # Doorbell (Nuki Opener), shown on the front door sub-page.
   doorbell: !include

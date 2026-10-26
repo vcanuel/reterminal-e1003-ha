@@ -32,6 +32,7 @@ Left:
 
 - [x] Weather sub-page (touch): current details, next 12 hours, next 7 days (2026-10-26).
 - [x] Heating sub-page per room: target −/+ 0.5 °C, hvac mode (2026-10-26).
+- [x] Electricity sub-page (HomeWizard P1): rate, capacity tariff, last 24 h / 14 days (2026-10-26).
 - [x] Tesla sub-page (TeslaMate, read-only): charge, vehicle, climate, tyres, software (2026-10-26).
 - [x] Month calendar (header date / calendar widget), previous / next month (2026-10-26).
 - [x] Doorbell (Nuki Opener) on the front door sub-page: Ring to Open, buzz, last ring; the page shows up when someone rings (2026-10-26).

@@ -2,7 +2,7 @@
 # Add your own icons to i_s:  font: [{ id: !extend i_s, glyphs: ["\U000Fxxxx"] }]
 font:
   - { file: "gfonts://Inter@700", id: f_h1, size: 64, bpp: 2, glyphsets: [GF_Latin_Core] }
-  - { file: "gfonts://Inter@700", id: f_xl, size: 180, bpp: 2, glyphs: "0123456789-.°% " }
+  - { file: "gfonts://Inter@700", id: f_xl, size: 180, bpp: 2, glyphs: "0123456789-.°% kW" }
   - { file: "gfonts://Inter@600", id: f_h2, size: 46, bpp: 2, glyphsets: [GF_Latin_Core] }
   - { file: "gfonts://Inter@600", id: f_txt_b, size: 40, bpp: 2, glyphsets: [GF_Latin_Core] }
   - { file: "gfonts://Inter@400", id: f_txt, size: 40, bpp: 2, glyphsets: [GF_Latin_Core] }
@@ -30,3 +30,5 @@ font:
       - "\U000F009E"  # bell-ring
       - "\U000F0141"  # chevron-left
       - "\U000F0142"  # chevron-right
+      - "\U000F05A8"  # white-balance-sunny
+      - "\U000F0594"  # weather-night

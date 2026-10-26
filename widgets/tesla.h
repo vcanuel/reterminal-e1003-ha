@@ -16,12 +16,6 @@ struct Tesla {
   text_sensor::TextSensor *state, *scheduled, *version, *update_version;
 };
 
-// Label (gray) on the left, value (bold) on the right of a w-wide row.
-inline void kv(Display &it, int x, int y, int w, const char *label, const std::string &value) {
-  txt(it, x, y, f_txt, GRAY, TextAlign::TOP_LEFT, label);
-  txt(it, x + w, y, f_txt_b, BLACK, TextAlign::TOP_RIGHT, value);
-}
-
 // "2026-10-26T21:00:00+00:00" -> local "22:00", empty when not a date.
 inline std::string local_hm(const std::string &iso) {
   int y, mo, d, h, mi, s = 0, oh = 0, om = 0;

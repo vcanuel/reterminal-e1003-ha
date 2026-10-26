@@ -1,0 +1,99 @@
+# Electricity from a HomeWizard P1 meter (entities sensor.<meter>_power, _energy_import_tariff_1...):
+# power tile; touching it opens a sub-page with the current rate (day / night), the capacity tariff (quarter-hour
+# average vs. peak of the month, Belgium), the last 24 hours and the last 14 days (recorder.get_statistics).
+#   packages:
+#     elec: !include { file: widgets/p1meter.yaml, vars: { id: elec, meter: hw_p1meter_abcdef } }
+# Draw: id(elec)(it, {x, y, 370, 220});
+defaults:
+  title: Electricity
+  subtitle: current consumption
+
+esphome:
+  includes:
+    - power.h
+    - p1meter.h
+
+globals:
+  - id: ${id}_hours   # last 24 hours: hour:kWh,...
+    type: std::string
+    restore_value: no
+  - id: ${id}_days    # last 14 days: weekday|day kWh|night kWh per line
+    type: std::string
+    restore_value: no
+  - id: ${id}_range   # start of the hourly and daily statistics (local time)
+    type: std::vector<std::string>
+    restore_value: no
+  - id: ${id}
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) {
+        ui::p1_tile(it, r, {"${id}", "${title}", "${subtitle}", ${id}_power, ${id}_average, ${id}_peak, ${id}_tariff,
+                            ${id}_hours->value(), ${id}_days->value()});
+      }
+
+sensor:
+  - { platform: homeassistant, id: "${id}_power", entity_id: "sensor.${meter}_power" }
+  - { platform: homeassistant, id: "${id}_average", entity_id: "sensor.${meter}_average_demand" }
+  - { platform: homeassistant, id: "${id}_peak", entity_id: "sensor.${meter}_peak_demand_current_month" }
+
+text_sensor:
+  - { platform: homeassistant, id: "${id}_tariff", entity_id: "sensor.${meter}_tariff" }
+
+script:
+  - id: !extend fetch_data
+    then:
+      - lambda: |-
+          time_t now = ::time(nullptr);
+          char h[24], d[24];
+          struct tm t;
+          time_t from = now - 23 * 3600;
+          localtime_r(&from, &t);
+          strftime(h, sizeof(h), "%Y-%m-%d %H:00:00", &t);
+          from = now - 13 * 86400;
+          localtime_r(&from, &t);
+          strftime(d, sizeof(d), "%Y-%m-%d 00:00:00", &t);
+          id(${id}_range) = {h, d};
+      - homeassistant.action:
+          action: recorder.get_statistics
+          data:
+            statistic_ids: sensor.${meter}_energy_import
+            period: hour
+            types: change
+            start_time: !lambda return id(${id}_range)[0];
+          capture_response: true
+          response_template: |-
+            {%- for r in response.statistics['sensor.${meter}_energy_import'] -%}
+            {{ as_local(as_datetime(r.start)).hour }}:{{ (r.change or 0) | round(2) }}{{ ',' if not loop.last else '' }}
+            {%- endfor -%}
+          on_success:
+            - lambda: |-
+                auto v = response["response"];
+                id(${id}_hours) = v.is<const char *>() ? std::string(v.as<const char *>()) : "";
+          on_error:
+            - logger.log:
+                format: "recorder.get_statistics (hours): %s"
+                args: ["error.c_str()"]
+      - homeassistant.action:
+          action: recorder.get_statistics
+          data:
+            period: day
+            types: change
+            start_time: !lambda return id(${id}_range)[1];
+          data_template:  # rendered by HA into a list (a plain "a, b" string would be one id)
+            statistic_ids: "{{ ['sensor.${meter}_energy_import_tariff_1', 'sensor.${meter}_energy_import_tariff_2'] }}"
+          capture_response: true
+          response_template: |-
+            {%- set day = response.statistics.get('sensor.${meter}_energy_import_tariff_1', []) -%}
+            {%- set night = response.statistics.get('sensor.${meter}_energy_import_tariff_2', []) -%}
+            {%- for i in range(day | length) -%}
+            {{ as_local(as_datetime(day[i].start)).weekday() }}|{{ (day[i].change or 0) | round(1) }}|{{ ((night[i].change or 0) if night | length > i else 0) | round(1) }}
+            {% endfor -%}
+          on_success:
+            - lambda: |-
+                auto v = response["response"];
+                id(${id}_days) = v.is<const char *>() ? std::string(v.as<const char *>()) : "";
+          on_error:
+            - logger.log:
+                format: "recorder.get_statistics (days): %s"
+                args: ["error.c_str()"]
