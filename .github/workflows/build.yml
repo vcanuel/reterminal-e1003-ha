@@ -46,7 +46,7 @@ jobs:
         run: |
           mkdir -p snapshots
           ESPHOME_SNAPSHOT_DIR=$PWD/snapshots esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml --no-logs
-          test -s snapshots/example.bmp && test -s snapshots/example-weather.bmp && test -s snapshots/example-room.bmp && test -s snapshots/example-lock.bmp
+          test -s snapshots/example.bmp && test -s snapshots/example-weather.bmp && test -s snapshots/example-room.bmp && test -s snapshots/example-car.bmp && test -s snapshots/example-lock.bmp
 
       - uses: actions/upload-artifact@v7
         with:

@@ -28,14 +28,8 @@ packages:
   office: !include { file: widgets/room.yaml, vars: { id: office, entity: climate.office, name: Office } }
   power_meter: !include { file: widgets/power.yaml, vars: { id: power_meter, entity: sensor.power_consumption } }
   front_door: !include { file: widgets/lock.yaml, vars: { id: front_door, entity: lock.front_door, name: Front door } }
-  car: !include
-    file: widgets/car.yaml
-    vars:
-      id: car
-      battery: sensor.car_battery_level
-      range: sensor.car_range
-      charger_power: sensor.car_charger_power
-      plugged: binary_sensor.car_plugged_in
+  # Tesla through TeslaMate (sensor.my_tesla_*); for another car: widgets/car.yaml (tile only).
+  car: !include { file: widgets/tesla.yaml, vars: { id: car, car: my_tesla, name: Tesla } }
   alice: !include { file: widgets/person.yaml, vars: { id: alice, entity: person.alice, name: Alice } }
   bob: !include { file: widgets/person.yaml, vars: { id: bob, entity: person.bob, name: Bob } }
 

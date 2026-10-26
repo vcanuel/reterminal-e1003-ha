@@ -1,0 +1,61 @@
+# Tesla through TeslaMate (MQTT entities named sensor.<car>_battery_level, binary_sensor.<car>_locked...):
+# car tile; touching it opens a read-only sub-page (charge, vehicle, climate, tyres, software). No location.
+#   packages:
+#     tesla: !include { file: widgets/tesla.yaml, vars: { id: tesla, car: my_car, name: Tesla } }
+# Draw: id(tesla)(it, {x, y, 370, 220});
+defaults:
+  name: Tesla
+
+esphome:
+  includes:
+    - car.h
+    - tesla.h
+
+globals:
+  - id: ${id}
+    type: std::function<void(display::Display &, display::Rect)>
+    restore_value: no
+    initial_value: |-
+      [](display::Display &it, display::Rect r) {
+        ui::tesla_tile(it, r, {"${id}", "${name}", ${id}_battery, ${id}_range, ${id}_charger_power, ${id}_limit,
+                               ${id}_time_to_full, ${id}_energy_added, ${id}_inside, ${id}_outside, ${id}_odometer,
+                               {${id}_tpms_fl, ${id}_tpms_fr, ${id}_tpms_rl, ${id}_tpms_rr},
+                               ${id}_plugged, ${id}_port_open, ${id}_locked, ${id}_doors, ${id}_windows, ${id}_trunk,
+                               ${id}_frunk, ${id}_sentry, ${id}_climate_on, ${id}_preconditioning,
+                               ${id}_update_available, ${id}_state, ${id}_scheduled, ${id}_version,
+                               ${id}_update_version});
+      }
+
+sensor:
+  - { platform: homeassistant, id: "${id}_battery", entity_id: "sensor.${car}_battery_level" }
+  - { platform: homeassistant, id: "${id}_range", entity_id: "sensor.${car}_est_battery_range" }
+  - { platform: homeassistant, id: "${id}_charger_power", entity_id: "sensor.${car}_charger_power" }
+  - { platform: homeassistant, id: "${id}_limit", entity_id: "sensor.${car}_charge_limit_soc" }
+  - { platform: homeassistant, id: "${id}_time_to_full", entity_id: "sensor.${car}_time_to_full_charge" }
+  - { platform: homeassistant, id: "${id}_energy_added", entity_id: "sensor.${car}_charge_energy_added" }
+  - { platform: homeassistant, id: "${id}_inside", entity_id: "sensor.${car}_inside_temp" }
+  - { platform: homeassistant, id: "${id}_outside", entity_id: "sensor.${car}_outside_temp" }
+  - { platform: homeassistant, id: "${id}_odometer", entity_id: "sensor.${car}_odometer" }
+  - { platform: homeassistant, id: "${id}_tpms_fl", entity_id: "sensor.${car}_tpms_pressure_front_left" }
+  - { platform: homeassistant, id: "${id}_tpms_fr", entity_id: "sensor.${car}_tpms_pressure_front_right" }
+  - { platform: homeassistant, id: "${id}_tpms_rl", entity_id: "sensor.${car}_tpms_pressure_rear_left" }
+  - { platform: homeassistant, id: "${id}_tpms_rr", entity_id: "sensor.${car}_tpms_pressure_rear_right" }
+
+binary_sensor:
+  - { platform: homeassistant, id: "${id}_plugged", entity_id: "binary_sensor.${car}_plugged_in" }
+  - { platform: homeassistant, id: "${id}_port_open", entity_id: "binary_sensor.${car}_charge_port_door_open" }
+  - { platform: homeassistant, id: "${id}_locked", entity_id: "binary_sensor.${car}_locked" }
+  - { platform: homeassistant, id: "${id}_doors", entity_id: "binary_sensor.${car}_doors_open" }
+  - { platform: homeassistant, id: "${id}_windows", entity_id: "binary_sensor.${car}_windows_open" }
+  - { platform: homeassistant, id: "${id}_trunk", entity_id: "binary_sensor.${car}_trunk_open" }
+  - { platform: homeassistant, id: "${id}_frunk", entity_id: "binary_sensor.${car}_frunk_open" }
+  - { platform: homeassistant, id: "${id}_sentry", entity_id: "binary_sensor.${car}_sentry_mode" }
+  - { platform: homeassistant, id: "${id}_climate_on", entity_id: "binary_sensor.${car}_is_climate_on" }
+  - { platform: homeassistant, id: "${id}_preconditioning", entity_id: "binary_sensor.${car}_is_preconditioning" }
+  - { platform: homeassistant, id: "${id}_update_available", entity_id: "binary_sensor.${car}_update_available" }
+
+text_sensor:
+  - { platform: homeassistant, id: "${id}_state", entity_id: "sensor.${car}_state" }
+  - { platform: homeassistant, id: "${id}_scheduled", entity_id: "sensor.${car}_scheduled_charging_start_time" }
+  - { platform: homeassistant, id: "${id}_version", entity_id: "sensor.${car}_version" }
+  - { platform: homeassistant, id: "${id}_update_version", entity_id: "sensor.${car}_update_version" }

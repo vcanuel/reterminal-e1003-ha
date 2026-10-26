@@ -12,7 +12,8 @@ in **plain ESPHome**: nothing to set up in Home Assistant besides allowing actio
 - Weather (current + 5 days) and calendar fetched with the HA actions `weather.get_forecasts` /
   `calendar.get_events` and `response_template`: no template sensor to create in HA.
 - Rooms (climate.*), power, lock, electric car, presence through `homeassistant` sensors.
-- Touch: weather sub-page (details, next 12 hours, next 7 days), room sub-page (target −/+, hvac mode), lock sub-page (lock / unlock / open, with
+- Touch: weather sub-page (details, next 12 hours, next 7 days), room sub-page (target −/+, hvac mode), Tesla sub-page
+  (TeslaMate: charge, vehicle, climate, tyres, software), lock sub-page (lock / unlock / open, with
   confirmation), feedback beep, back to the dashboard after 2 min.
   Touching anywhere else refreshes the screen.
 - Power: mains/battery detection through the **SY6974B** charger (I2C 0x6B, REG08 bit 2), with a voltage-jump
@@ -41,6 +42,7 @@ simulator.yaml       replaces hardware.yaml on a computer to render the screensh
 | Power | `widgets/power.yaml` (`id`, `entity`, `title`, `subtitle`) | `id(power_meter)(it, {x, y, 370, 220})` |
 | Lock + sub-page | `widgets/lock.yaml` (`id`, `entity`, `name`, `subtitle`) | `id(front_door)(it, {x, y, 370, 220})` |
 | Electric car | `widgets/car.yaml` (`id`, `name`, `battery`, `range`, `charger_power`, `plugged`) | `id(car)(it, {x, y, 370, 220})` |
+| Tesla (TeslaMate) + sub-page | `widgets/tesla.yaml` (`id`, `car`: entity prefix, `name`) | `id(car)(it, {x, y, 370, 220})` |
 | Presence (person.*) | `widgets/person.yaml` (`id`, `entity`, `name`), one per person | `ui::presence(it, r, "Presence", {id(alice), ...})` |
 
 Each package exposes a global `id(<id>)` that draws the widget inside the given rectangle; the screen file lists
@@ -82,15 +84,16 @@ mkdir -p private && cp example.yaml private/my-screen.yaml    # private/ is igno
 ## Screenshots (simulator)
 
 `simulator.yaml` replaces `hardware.yaml` with ESPHome's `host` platform and an in-memory display: it draws
-`example.yaml` with demo data, saves the dashboard and the weather, room and lock sub-pages, then exits. No screen or Home Assistant
+`example.yaml` with demo data, saves the dashboard and the weather, room, car and lock sub-pages, then exits. No screen or Home Assistant
 needed.
 
 ```bash
 ESPHOME_SNAPSHOT_DIR=$PWD/docs .venv/bin/esphome -s name reterminal-sim -s hardware simulator.yaml run example.yaml --no-logs
-for f in example example-weather example-room example-lock; do sips -s format png docs/$f.bmp --out docs/$f.png && rm docs/$f.bmp; done   # macOS
+for f in example example-weather example-room example-car example-lock; do sips -s format png docs/$f.bmp --out docs/$f.png && rm docs/$f.bmp; done   # macOS
 ```
 
-<img src="docs/example-weather.png" width="400" alt="Weather sub-page"> <img src="docs/example-room.png" width="400" alt="Room sub-page"> <img src="docs/example-lock.png" width="400" alt="Lock sub-page">
+<img src="docs/example-weather.png" width="400" alt="Weather sub-page"> <img src="docs/example-room.png" width="400" alt="Room sub-page">
+<img src="docs/example-car.png" width="400" alt="Tesla sub-page"> <img src="docs/example-lock.png" width="400" alt="Lock sub-page">
 
 ## Known limitations
 
