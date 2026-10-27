@@ -21,6 +21,9 @@ in **plain ESPHome**: nothing to set up in Home Assistant besides allowing actio
 - Power: mains/battery detection through the **SY6974B** charger (I2C 0x6B, REG08 bit 2), with a voltage-jump
   fallback. On mains: refresh every 5 min + touch. On battery: one refresh, then 30 min deep sleep
   (wake-up with the green button).
+- Entities in HA: temperature / humidity (on-board **SHT4x**, I2C 0x44), battery, mains, charge status and
+  charger faults (SY6974B REG08 / REG09), last refresh, current page, wake-up and reset reasons, CPU temperature,
+  free heap / PSRAM, uptime; buttons Refresh / Beep / Restart; switch "Prevent sleep" (stays awake on battery).
 - On-screen texts in English or French (`language` substitution; see `ui_strings.h` to add a language).
 
 ## Layout of the repo

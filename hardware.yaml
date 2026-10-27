@@ -1,5 +1,8 @@
 # reTerminal E1003 hardware package (10.3" ePaper 1872x1404, 16 gray levels), independent of the layout:
-# ESP32-S3 + PSRAM, it8951 display, GT911 touch, buzzer, LED, battery, SY6974B charger, green button, deep sleep.
+# ESP32-S3 + PSRAM, it8951 display, GT911 touch, buzzer, LED, battery, SY6974B charger, green button, deep sleep,
+# SHT4x temperature/humidity sensor (I2C 0x44).
+#
+# I2C bus scan: 0x44 SHT4x, 0x51 RTC (PCF8563/BM8563, unused), 0x5D GT911, 0x6B SY6974B.
 #
 # Refresh: at boot (HA connection), every ${refresh_interval}, on touch, green button or HA button.
 # Each widget that queries HA hooks into it with `script: - id: !extend fetch_data`.
@@ -43,6 +46,7 @@ esphome:
     - priority: -100
       then:
         - output.turn_on: bsp_battery_enable
+        - component.update: wakeup_cause
         - delay: 20s
         - if:
             condition:
@@ -62,6 +66,10 @@ psram:
 
 logger:
   hardware_uart: UART0
+
+# Free heap / PSRAM and reset reason (diagnostic sensors below).
+debug:
+  update_interval: 60s
 
 api:
   encryption:
@@ -118,6 +126,11 @@ globals:
     type: int
     restore_value: no
     initial_value: '-1'
+  # Last charger REG09 (faults), -1 when the I2C read failed.
+  - id: charger_fault
+    type: int
+    restore_value: no
+    initial_value: '-1'
 
 sensor:
   - platform: adc
@@ -159,6 +172,37 @@ sensor:
     update_interval: 60s
     entity_category: diagnostic
 
+  - platform: sht4x
+    id: sht4x_sensor
+    address: 0x44
+    update_interval: 60s
+    temperature:
+      name: "Temperature"
+      id: room_temperature
+    humidity:
+      name: "Humidity"
+      id: room_humidity
+
+  - platform: template
+    id: last_refresh
+    name: "Last refresh"
+    device_class: timestamp
+    entity_category: diagnostic
+    update_interval: never
+  - platform: internal_temperature
+    id: cpu_temperature
+    name: "CPU temperature"
+    entity_category: diagnostic
+  - platform: uptime
+    id: uptime_sensor
+    name: "Uptime"
+  - platform: debug
+    id: debug_sensors
+    free:
+      name: "Free heap"
+    psram:
+      name: "Free PSRAM"
+
 # Shown on the device page in HA (diagnostic).
 text_sensor:
   - platform: wifi_info
@@ -168,6 +212,59 @@ text_sensor:
     ssid:
       name: "Wi-Fi network"
       entity_category: diagnostic
+    mac_address:
+      name: "MAC address"
+      entity_category: diagnostic
+  - platform: version
+    name: "ESPHome version"
+    hide_timestamp: true
+  - platform: debug
+    id: debug_text
+    reset_reason:
+      name: "Reset reason"
+  - platform: template
+    id: wakeup_cause
+    name: "Wake-up cause"
+    entity_category: diagnostic
+    update_interval: never
+    lambda: |-
+      switch (esp_sleep_get_wakeup_cause()) {
+        case ESP_SLEEP_WAKEUP_EXT0:
+        case ESP_SLEEP_WAKEUP_EXT1: return {"button"};
+        case ESP_SLEEP_WAKEUP_TIMER: return {"timer"};
+        default: return {"power on / reset"};
+      }
+  # CHRG_STAT = REG08 bits 4:3.
+  - platform: template
+    id: charge_status
+    name: "Charge status"
+    entity_category: diagnostic
+    update_interval: 30s
+    lambda: |-
+      if (id(charger_stat) < 0) return {"unknown"};
+      static const char *const names[] = {"not charging", "pre-charge", "fast charge", "charge done"};
+      return {names[(id(charger_stat) >> 3) & 3]};
+  # REG09: bits 5:4 CHRG_FAULT, bit 3 BAT_FAULT (over-voltage), bits 2:0 NTC_FAULT.
+  - platform: template
+    id: charger_fault_sensor
+    name: "Charger fault"
+    entity_category: diagnostic
+    update_interval: 30s
+    lambda: |-
+      int f = id(charger_fault);
+      if (f < 0) return {"unknown"};
+      static const char *const chrg[] = {"", "input fault", "thermal shutdown", "safety timer expired"};
+      std::string s = chrg[(f >> 4) & 3];
+      if (f & 0x08) s += s.empty() ? "battery over-voltage" : ", battery over-voltage";
+      if (f & 0x07) s += s.empty() ? "battery temperature" : ", battery temperature";
+      return s.empty() ? std::string("none") : s;
+  - platform: template
+    id: current_page
+    name: "Page"
+    entity_category: diagnostic
+    update_interval: 5s
+    lambda: |-
+      return ui::on_dashboard() ? std::string("dashboard") : ui::page().key;
 
 binary_sensor:
   - platform: template
@@ -219,6 +316,24 @@ button:
     name: "Refresh screen"
     on_press:
       - script.execute: refresh
+  - platform: template
+    id: beep_button
+    name: "Beep"
+    on_press:
+      - script.execute: beep
+  - platform: restart
+    id: restart_button
+    name: "Restart"
+
+# Stays awake on battery (e.g. before unplugging for an OTA). Can only be switched while the screen is awake.
+switch:
+  - platform: template
+    id: prevent_sleep
+    name: "Prevent sleep"
+    icon: mdi:sleep-off
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
 
 deep_sleep:
   id: deep_sleep_1
@@ -258,12 +373,14 @@ script:
     mode: single
     then:
       - lambda: |-
-          uint8_t st;
+          uint8_t st, fault;
           if (!id(charger).read_byte(0x08, &st)) {
             if (id(charger_stat) >= 0) ESP_LOGW("power", "SY6974B not responding, falling back to voltage");
             id(charger_stat) = -1;
+            id(charger_fault) = -1;
             return;
           }
+          id(charger_fault) = id(charger).read_byte(0x09, &fault) ? fault : -1;
           const bool was = id(on_mains), now = st & 0x04;  // PG_STAT
           id(charger_stat) = st;
           id(on_mains) = now;
@@ -308,9 +425,12 @@ script:
       - delay: 8s
       - component.update: epaper_display
       - light.turn_off: onboard_led
+      - lambda: |-
+          auto now = id(ha_time).now();
+          if (now.is_valid()) id(last_refresh).publish_state(now.timestamp);
       - if:
           condition:
-            lambda: return !id(on_mains);
+            lambda: return !id(on_mains) && !id(prevent_sleep).state;
           then:
             - delay: 10s   # end of the ePaper refresh + states sent to HA
             - deep_sleep.enter: deep_sleep_1
